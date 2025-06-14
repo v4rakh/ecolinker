@@ -1,0 +1,49 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "prConcurrentLimit": 0,
+  "osvVulnerabilityAlerts": true,
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "rangeStrategy": "pin",
+  "automerge": false,
+  "branchPrefix": "renovate/",
+  "separateMajorMinor": true,
+  "separateMultipleMajor": false,
+  "separateMultipleMinor": false,
+  "separateMinorPatch": true,
+  "baseBranches": [
+    "main"
+  ],
+  "extends": [
+    "config:recommended",
+    ":rebaseStalePrs",
+    ":ignoreUnstable",
+    "group:monorepos",
+    "group:recommended",
+    "packages:eslint",
+    "packages:stylelint",
+    "packages:tslint",
+    "schedule:weekends",
+    "schedule:automergeWeekends",
+    "local>msm/renovate-presets//presets/docker-ignore.json",
+    "local>msm/renovate-presets//presets/github-actions-ignore.json",
+    "local>msm/renovate-presets//presets/go-ignore-manager.json",
+    "local>msm/renovate-presets//presets/go-major.json",
+    "local>msm/renovate-presets//presets/go-minor-automerge.json",
+    "local>msm/renovate-presets//presets/go-patch-automerge.json"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodTidyE"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "gocron",
+      "matchPackageNames": [
+        "github.com/go-co-op/gocron{/,}**"
+      ]
+    }
+  ]
+}

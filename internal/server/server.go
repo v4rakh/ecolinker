@@ -1,0 +1,279 @@
+package server
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
+	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
+	"git.myservermanager.com/varakh/ecolinker/internal/server/handler"
+	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
+	"git.myservermanager.com/varakh/ecolinker/internal/server/service"
+	ginzap "github.com/gin-contrib/zap"
+	"github.com/gin-gonic/gin"
+	"github.com/urfave/cli/v3"
+	"go.uber.org/automaxprocs/maxprocs"
+	"go.uber.org/zap"
+	"net/http"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+)
+
+var ServeCmd = &cli.Command{
+	Name:  "serve",
+	Usage: "Starts the server and keeps it running",
+	Action: func(ctx context.Context, _ *cli.Command) error {
+		start(ctx)
+		return nil
+	},
+}
+
+func start(c context.Context) {
+	var err error
+
+	// configuration init
+	cfg, db := config.LoadFromEnvironment(c)
+
+	zap.L().Sugar().Infof("Starting %s %s", app.Name, app.Version)
+
+	// adhere to GOMAXPROCS, but silence default output
+	_, _ = maxprocs.Set(maxprocs.Logger(nil))
+	zap.L().Sugar().Debugf("GOMAXPROCS '%d'", runtime.GOMAXPROCS(0))
+
+	// set gin mode derived
+	if cfg.App.Development {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	corsMiddleware := middlewareCors(cfg.Cors)
+	zapMiddleware := ginzap.Ginzap(zap.L(), "", cfg.Logging.UTC)
+	recoveryMiddleware := ginzap.RecoveryWithZap(zap.L(), true)
+	errorMiddleware := middlewareErrorHandler()
+	errorRecoveryMiddleware := middlewareErrorRecoveryHandler()
+
+	// routers init
+	appRouter := newEngine(zapMiddleware, recoveryMiddleware, corsMiddleware, middlewareAppName(), middlewareAppVersion(), errorMiddleware, errorRecoveryMiddleware)
+	promRouter := newEngine(zapMiddleware, recoveryMiddleware, errorMiddleware, errorRecoveryMiddleware)
+
+	// repositories init
+	deviceRepo := repository.NewDeviceDbRepo(db)
+	mqttSubRepo := repository.NewMqttSubscriptionDbRepo(db)
+	collectorRepo := repository.NewCollectorDbRepo(db)
+
+	// services init
+	lockService := service.NewLockMemService()
+	if cfg.Lock.RedisEnabled {
+		var e error
+		lockService, e = service.NewLockRedisService(cfg.Lock)
+
+		if err != nil {
+			zap.L().Fatal("Failed to create lock service", zap.Error(e))
+		}
+	}
+
+	var taskService *service.TaskService
+	if taskService, err = service.NewTaskService(lockService, cfg.App, cfg.Lock); err != nil {
+		zap.L().Sugar().Fatalf("Task service creation failed: %v", err)
+	}
+
+	ecoFlowHttpService := service.NewEcoFlowHttpService(cfg.EcoFlow)
+
+	mqttForwardService := service.NewMqttForwardService(taskService, cfg.MqttForward)
+	if err = mqttForwardService.Init(); err != nil {
+		zap.L().Sugar().Fatalf("MQTT forward service initialization failed: %v", err)
+	}
+
+	separatePromServer := cfg.Prometheus.Enabled && cfg.Prometheus.Port != cfg.Server.Port
+	var prometheusService *service.PrometheusService
+	if cfg.Prometheus.Enabled && separatePromServer {
+		prometheusService = service.NewPrometheusService(promRouter, cfg.Prometheus)
+		zap.L().Info("Starting separate Prometheus server")
+	} else if cfg.Prometheus.Enabled && !separatePromServer {
+		prometheusService = service.NewPrometheusService(appRouter, cfg.Prometheus)
+		zap.L().Info("Starting embedded Prometheus server")
+	}
+	if cfg.Prometheus.Enabled {
+		if err = prometheusService.Init(); err != nil {
+			zap.L().Sugar().Fatalf("Prometheus service initialization failed: %v", err)
+		}
+		// always instrument tracking for the app router
+		appRouter.Use(prometheusService.GetProm().Instrument())
+	}
+
+	mqttSubReadService := service.NewMqttSubscriptionReadService(mqttSubRepo)
+
+	ecoFlowMqttService := service.NewEcoFlowMqttService(ecoFlowHttpService, mqttSubReadService, mqttForwardService, prometheusService, taskService, cfg.EcoFlow)
+	if err = ecoFlowMqttService.Init(); err != nil {
+		zap.L().Sugar().Fatalf("EcoFlow service initialization failed: %v", err)
+	}
+
+	ecoFlowMqttTask := service.NewEcoFlowMqttTask(ecoFlowMqttService, mqttForwardService, prometheusService, taskService, cfg.EcoFlow)
+	mqttSubWriteService := service.NewMqttSubscriptionWriteService(mqttSubReadService, ecoFlowMqttTask, mqttSubRepo)
+	deviceService := service.NewDeviceService(mqttSubReadService, ecoFlowMqttTask, deviceRepo)
+
+	collectorService := service.NewCollectorService(ecoFlowHttpService, mqttForwardService, taskService, prometheusService, collectorRepo)
+	if err = collectorService.Init(); err != nil {
+		zap.L().Sugar().Fatalf("Collector service initialization failed: %v", err)
+	}
+
+	prometheusTask := service.NewPrometheusTask(cfg.Prometheus, ecoFlowMqttService, mqttForwardService, prometheusService, taskService)
+	if err = prometheusTask.Init(); err != nil {
+		zap.L().Sugar().Fatalf("Task prometheus service initialization failed: %v", err)
+	}
+	taskService.Start()
+
+	// handlers init
+	infoHandler := handler.NewInfoHandler(cfg.App)
+	healthHandler := handler.NewHealthHandler()
+	deviceHandler := handler.NewDeviceHandler(deviceService)
+	mqttSubHandler := handler.NewMqttSubscriptionHandler(mqttSubReadService, mqttSubWriteService)
+	collectorHandler := handler.NewCollectorHandler(collectorService)
+	ecoFlowHandler := handler.NewEcoFlowHandler(ecoFlowHttpService, ecoFlowMqttService)
+
+	apiPublicGroup := appRouter.Group(fmt.Sprintf("%s/api/v1", cfg.Server.BasePath))
+	apiPublicGroup.GET("/health", healthHandler.Status)
+	apiPublicGroup.GET("/info", infoHandler.Status)
+
+	var authMethodHandler gin.HandlerFunc
+
+	if constant.ConfigAuthModeBasicSingle == cfg.Auth.AuthMethod {
+		authMethodHandler = gin.BasicAuth(gin.Accounts{
+			cfg.Auth.BasicAuthUser: cfg.Auth.BasicAuthPassword,
+		})
+	} else if constant.ConfigAuthModeBasicCredentials == cfg.Auth.AuthMethod {
+		authMethodHandler = gin.BasicAuth(cfg.Auth.BasicAuthCredentials)
+	} else if constant.ConfigAuthModeNone == cfg.Auth.AuthMethod {
+		authMethodHandler = func(c *gin.Context) {
+			return
+		}
+	} else {
+		zap.L().Fatal("No valid auth mode found")
+	}
+
+	apiAuthGroup := appRouter.Group(fmt.Sprintf("%sapi/v1", cfg.Server.BasePath), authMethodHandler)
+
+	apiAuthGroup.GET("/devices", deviceHandler.GetAll)
+	apiAuthGroup.GET("/devices/:sn", deviceHandler.Get)
+	apiAuthGroup.POST("/devices", middlewareEnforceJsonContentType(), deviceHandler.Create)
+	apiAuthGroup.PUT("/devices", middlewareEnforceJsonContentType(), deviceHandler.Update)
+	apiAuthGroup.DELETE("/devices/:sn", deviceHandler.Delete)
+
+	apiAuthGroup.GET("/mqtt-subscriptions", mqttSubHandler.Get)
+	apiAuthGroup.POST("/mqtt-subscriptions", middlewareEnforceJsonContentType(), mqttSubHandler.Create)
+	apiAuthGroup.PUT("/mqtt-subscriptions/:id", middlewareEnforceJsonContentType(), mqttSubHandler.Update)
+	apiAuthGroup.DELETE("/mqtt-subscriptions/:id", mqttSubHandler.Delete)
+
+	apiAuthGroup.GET("/collectors", collectorHandler.Get)
+	apiAuthGroup.POST("/collectors", middlewareEnforceJsonContentType(), collectorHandler.Create)
+	apiAuthGroup.PUT("/collectors/:id", middlewareEnforceJsonContentType(), collectorHandler.Update)
+	apiAuthGroup.DELETE("/collectors/:id", collectorHandler.Delete)
+
+	apiAuthGroup.GET("/ecoflow/status", ecoFlowHandler.BrokerStatus)
+	apiAuthGroup.GET("/ecoflow/devices", ecoFlowHandler.Devices)
+	apiAuthGroup.POST("/ecoflow/devices/:sn", ecoFlowHandler.Parameters)
+	apiAuthGroup.GET("/ecoflow/devices/:sn", ecoFlowHandler.ParametersAll)
+	apiAuthGroup.GET("/ecoflow/devices/:sn/history", ecoFlowHandler.History)
+	apiAuthGroup.GET("/ecoflow/devices/:sn/batteries", ecoFlowHandler.Batteries)
+
+	// start servers (run in separate goroutines)
+	appSrv := newServer(appRouter, fmt.Sprintf("%s:%d", cfg.Server.Listen, cfg.Server.Port))
+	prometheusSrv := newServer(promRouter, fmt.Sprintf("%s:%d", cfg.Prometheus.Listen, cfg.Prometheus.Port))
+
+	startServer(appSrv, cfg.Server)
+
+	if separatePromServer {
+		startServer(prometheusSrv, cfg.Server)
+	}
+
+	// gracefully handle shut down
+	// Wait for interrupt signal to gracefully shut down the server with
+	// a timeout of x seconds.
+	quit := make(chan os.Signal, 1)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall. SIGKILL but cannot be caught, thus no need to add
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	zap.L().Info("Shutting down...")
+
+	timeoutCtx, timeoutCancel := context.WithTimeout(c, cfg.Server.Timeout)
+	defer timeoutCancel()
+
+	shutdownDone := make(chan struct{})
+	go func() {
+		taskService.Stop()
+		ecoFlowMqttService.Disconnect()
+		mqttForwardService.Disconnect()
+		stopServer(c, appSrv)
+		stopServer(c, prometheusSrv)
+		close(shutdownDone)
+	}()
+
+	select {
+	case <-shutdownDone:
+		zap.L().Info("Exited")
+	case <-timeoutCtx.Done():
+		zap.L().Sugar().Infof("Shutdown timeout of '%v' expired, exiting forcefully...", cfg.Server.Timeout)
+		os.Exit(1)
+	}
+}
+
+func newServer(r *gin.Engine, address string) *http.Server {
+	if r == nil || address == "" {
+		zap.L().Fatal("Failed to create server, engine or address is nil")
+		return nil
+	}
+
+	return &http.Server{
+		Addr:    address,
+		Handler: r,
+	}
+}
+
+func startServer(s *http.Server, cfg *config.Server) {
+	go func() {
+		var e error
+		zap.L().Sugar().Infof("Server listening on '%s'", s.Addr)
+
+		if cfg.TlsEnabled {
+			e = s.ListenAndServeTLS(cfg.TlsCertPath, cfg.TlsKeyPath)
+		} else {
+			e = s.ListenAndServe()
+		}
+
+		if e != nil && !errors.Is(e, http.ErrServerClosed) {
+			zap.L().Sugar().Fatalf("Server cannot be started: %v", e)
+		}
+	}()
+}
+
+func stopServer(ctx context.Context, s *http.Server) {
+	if s == nil {
+		return
+	}
+
+	if err := s.Shutdown(ctx); err != nil {
+		zap.L().Sugar().Fatalf("Shutdown failed, exited directly: %v", err)
+	}
+
+	zap.L().Sugar().Infof("Shutdown for '%s' complete", s.Addr)
+}
+
+func newEngine(middleware ...gin.HandlerFunc) *gin.Engine {
+	r := gin.New()
+
+	for _, m := range middleware {
+		r.Use(m)
+	}
+
+	r.NoMethod(middlewareGlobalMethodNotAllowed())
+	r.NoRoute(middlewareGlobalNotFound())
+
+	return r
+}

@@ -1,0 +1,12 @@
+inputs:
+  version:
+    description: "version to use"
+    required: true
+    type: string
+runs:
+  using: "composite"
+  steps:
+    - name: Native - build, test
+      shell: bash
+      run: |
+        make clean dependencies test-unit build

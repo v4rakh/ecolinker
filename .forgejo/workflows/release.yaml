@@ -1,0 +1,35 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version to use"
+        required: true
+        type: string
+jobs:
+  release:
+    runs-on: docker
+    container:
+      image: git.myservermanager.com/msm/executor-ubuntu-build-essential:latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+      - uses: ./.forgejo/actions/tooling
+        name: Tooling
+      - uses: ./.forgejo/actions/native-build
+        name: Native build
+        with:
+          version: ${{ inputs.version }}
+      - uses: ./.forgejo/actions/oci-prepare
+        name: OCI prepare
+      - uses: ./.forgejo/actions/oci-release
+        name: OCI release
+        with:
+          version: ${{ inputs.version }}
+          registryFQDN: git.myservermanager.com
+          registryUser: ${{ secrets.FORGEJO_USER }}
+          registryPass: ${{ secrets.FORGEJO_TOKEN }}
+      - uses: ./.forgejo/actions/release
+        name: Forgejo release
+        with:
+          version: ${{ inputs.version }}
+          token: ${{ secrets.FORGEJO_TOKEN }}

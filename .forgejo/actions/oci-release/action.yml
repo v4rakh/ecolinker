@@ -1,0 +1,38 @@
+inputs:
+  version:
+    description: "version to use"
+    required: true
+    type: string
+  registryFQDN:
+    description: "fqdn of internal registry"
+    type: string
+    required: true
+  registryUser:
+    description: "user name for internal registry"
+    type: string
+    required: true
+  registryPass:
+    description: "password for internal registry"
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Login to Forgejo
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ inputs.registryFQDN }}
+        username: ${{ inputs.registryUser }}
+        password: ${{ inputs.registryPass }}
+
+    - name: OCI - [SERVER] build and push
+      uses: docker/build-push-action@v4
+      with:
+        push: true
+        context: .
+        load: false
+        no-cache: true
+        tags: |
+          git.myservermanager.com/varakh/ecolinker:latest
+          git.myservermanager.com/varakh/ecolinker:${{ inputs.version }}

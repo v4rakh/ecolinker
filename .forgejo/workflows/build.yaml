@@ -1,0 +1,26 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  build:
+    runs-on: docker
+    container:
+      image: git.myservermanager.com/msm/executor-ubuntu-build-essential:latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+      - uses: ./.forgejo/actions/tooling
+        name: Tooling
+      - uses: ./.forgejo/actions/native-build
+        name: Native build
+        with:
+          version: ${{ github.sha }}
+      - uses: ./.forgejo/actions/oci-prepare
+        name: OCI prepare
+      - uses: ./.forgejo/actions/oci-build
+        name: OCI build
+        with:
+          loadImage: false

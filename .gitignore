@@ -1,0 +1,23 @@
+### dotenv ###
+.env
+
+### direnv ###
+.direnv
+
+### Go ###
+bin/
+*.test
+*.out
+go.work
+
+### Nix ###
+result
+
+### GoLand/Intellij ###
+.idea/
+*.iml
+.run/
+coverage.out
+.run
+*.iws
+out/
