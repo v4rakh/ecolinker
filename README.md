@@ -578,8 +578,79 @@ ecolinker_collector_invocations{device="7QX3V2A9KLM8J5WC",id="57528e68-b11f-4b49
 ecolinker_collector_last_invocation{device="7QX3V2A9KLM8J5WC",id="57528e68-b11f-4b49-aebb-7fa958ca4fd5",kind="device_parameters"} 1.749901826e+09
 ```
 
-In addition, EcoLinker exposes some performance metrics for its own runtime. To get started with a Grafana dashboard,
-look into the [go_ginprom](./_doc/go_ginprom.json) dashboard.
+EcoLinker exposes some performance metrics for its own runtime.
+
+#### Dashboards with Grafana
+
+Building a Grafana dashboard to visualize your device's metrics is probably why you started using EcoLinker in the first
+place. As this is heavily device and environment specific, there are two examples in the `_doc/` folder to get started.
+
+Remember, available metrics depend on defined collectors, your device, and MQTT payload sent from EcoFlow itself.
+
+* Example for a PowerOcean (inverter) device, look into the [example_powerocean.json](./_doc/example_powerocean.json).
+  It uses MQTT and collectors and incorporates the performance metrics. There are also
+  some [screenshots](./_doc/example_powerocean.md).
+* Example for a basic Grafana dashboard visualizing EcoLinker's performance metrics only, look into
+  the [go_ginprom](./_doc/go_ginprom.json) dashboard.
+
+#### Alerts with Alertmanager
+
+The [application metrics](#application-specific-metrics) can help you build proper alerting
+with [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/). Especially the timestamp based metrics
+have been introduced to serve this need.
+
+Here's an example [Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) configuration snippet to get
+started:
+
+```yaml
+# rules
+groups:
+  - name: ecolinker
+    rules:
+      # apply when you have EcoFlow MQTT enabled, checks if last received message from EcoFlow is at most 1 hour ago
+      - alert: EcoLinkerEcoFlowMQTTMessageMissed
+        expr: ((time()-ecolinker_ecoflow_mqtt_message_last_received)/60/60) >= 1
+        for: 1h
+        labels:
+          severity: critical
+          class: smarthome
+        annotations:
+          summary: "EcoFlow MQTT's last message is too long ago"
+          description: "EcoFlow MQTT's last message is too long ago"
+
+      # checks if last invocation of any collector is at least 2 hours ago
+      - alert: EcoLinkerCollectorMissed
+        expr: ((time()-ecolinker_collector_last_invocation)/60/60) >= 2
+        for: 1h
+        labels:
+          severity: critical
+          class: smarthome
+        annotations:
+          summary: "EcoLinker's collector last invocation is too long ago {{ $labels.id }}"
+          description: "EcoLinker's collector last invocation is too long ago.\nID: {{ $labels.id }}"
+
+      # apply when you have EcoFlow MQTT enabled, checks if not disconnected
+      - alert: EcoLinkerEcoFlowMQTTDisconnected
+        expr: ecolinker_ecoflow_mqtt_connected == 0
+        for: 30m
+        labels:
+          severity: critical
+          class: smarthome
+        annotations:
+          summary: "EcoFlow MQTT connection lost"
+          description: "EcoFlow MQTT connection lost"
+
+      # apply when you have MQTT forwarding enabled, checks if not disconnected
+      - alert: EcoLinkerForwardMQTTDisconnected
+        expr: ecolinker_mqtt_forward_connected == 0
+        for: 30m
+        labels:
+          severity: critical
+          class: smarthome
+        annotations:
+          summary: "Forward MQTT connection lost"
+          description: "Forward MQTT connection lost"
+```
 
 ### MQTT Forwarding
 
