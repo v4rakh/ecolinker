@@ -75,11 +75,17 @@ func (s *EcoFlowMqttService) Init() error {
 		OnConnectionLost: func(client mqtt.Client, err error) {
 			optionsReader := client.OptionsReader()
 			zap.L().Sugar().Warnf("Connection to broker '%s' lost: %v", optionsReader.Servers()[0].String(), err)
+			s.ClearSubscriptions()
 		},
 		OnReconnect: func(client mqtt.Client, options *mqtt.ClientOptions) {
 			optionsReader := client.OptionsReader()
+			zap.L().Sugar().Infof("Reconnecting to broker: %s", optionsReader.Servers()[0].String())
+			if _, connected := s.Status(); !connected {
+				zap.L().Warn("Not connected yet")
+				return
+			}
+
 			zap.L().Sugar().Infof("Reconnected to broker: %s", optionsReader.Servers()[0].String())
-			s.SyncSubscriptions()
 		},
 		MaxReconnectInterval: s.config.MqttMaxReconnectInterval,
 	}
@@ -209,6 +215,15 @@ func (s *EcoFlowMqttService) Unsubscribe(deviceSN string, topicKind constant.Top
 
 	zap.L().Sugar().Infof("Unsubscribed from topic '%s'", topicName)
 	return nil
+}
+
+// ClearSubscriptions clears subscriptions
+func (s *EcoFlowMqttService) ClearSubscriptions() {
+	s.subscriptions.Lock()
+	defer s.subscriptions.Unlock()
+
+	clear(s.subscriptions.values)
+	zap.L().Debug("Cleared subscriptions")
 }
 
 // Connect connects to MQTT

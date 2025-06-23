@@ -60,6 +60,11 @@ func (s *MqttForwardService) Init() error {
 	}
 	opts.OnReconnecting = func(client mqtt.Client, options *mqtt.ClientOptions) {
 		optionsReader := client.OptionsReader()
+		zap.L().Sugar().Infof("Reconnecting to broker: %s", optionsReader.Servers()[0].String())
+		if _, connected := s.Status(); !connected {
+			zap.L().Warn("Not connected yet")
+		}
+
 		zap.L().Sugar().Infof("Reconnected to broker: %s", optionsReader.Servers()[0].String())
 	}
 
