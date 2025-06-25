@@ -14,7 +14,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        version = "0.1.0";
+        version = "0.1.1";
       in {
         packages = {
           default = pkgs.buildGoModule {
@@ -24,7 +24,7 @@
             src = ./.;
             tags = [ "prod" ];
             env.CGO_ENABLED = 0;
-            vendorHash = "sha256-jQhHhsRmT0KBATosxcbaFqLgZ0LoHG3zOtMOQE6e8tI=";
+            vendorHash = "sha256-vwxu/Y0uRcy13hAL6y5NAffItWX3hDSjPPmFJZU3bM0=";
           };
         };
         devShells.default =
