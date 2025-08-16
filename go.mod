@@ -21,7 +21,7 @@ require (
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/sethvargo/go-envconfig v1.3.0
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v3 v3.3.8
+	github.com/urfave/cli/v3 v3.3.9
 	go.uber.org/automaxprocs v1.6.0
 	go.uber.org/zap v1.27.0
 	gorm.io/datatypes v1.2.6
