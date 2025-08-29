@@ -12,7 +12,7 @@ require (
 	github.com/gin-contrib/zap v1.1.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-co-op/gocron-redis-lock/v2 v2.1.0
-	github.com/go-co-op/gocron/v2 v2.16.3
+	github.com/go-co-op/gocron/v2 v2.16.4
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/go-redsync/redsync/v4 v4.13.0
 	github.com/go-resty/resty/v2 v2.16.5
@@ -20,7 +20,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/sethvargo/go-envconfig v1.3.0
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v3 v3.4.1
 	go.uber.org/automaxprocs v1.6.0
 	go.uber.org/zap v1.27.0
