@@ -2,7 +2,7 @@
   description = "ecolinker flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default";
     flake-utils = {
       url = "github:numtide/flake-utils";
@@ -24,7 +24,7 @@
             src = ./.;
             tags = [ "prod" ];
             env.CGO_ENABLED = 0;
-            vendorHash = "sha256-vwxu/Y0uRcy13hAL6y5NAffItWX3hDSjPPmFJZU3bM0=";
+            vendorHash = "sha256-jwyBo3mTC1aTMe9u25fGzwzICsevrT6vQSVfAgkSGx8=";
           };
         };
         devShells.default =
