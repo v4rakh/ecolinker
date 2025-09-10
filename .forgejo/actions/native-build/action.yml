@@ -9,4 +9,4 @@ runs:
     - name: Native - build, test
       shell: bash
       run: |
-        make clean dependencies test-unit build
+        make clean dependencies checkstyle test-unit build
