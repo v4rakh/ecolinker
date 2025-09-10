@@ -32,21 +32,6 @@ type MqttSubscription struct {
 	UpdatedAt time.Time `gorm:"time;autoUpdateTime;not null"`
 }
 
-func (e *Event) BeforeCreate(tx *gorm.DB) (err error) {
-	e.ID = uuid.New()
-	return
-}
-
-type Event struct {
-	ID         uuid.UUID         `gorm:"primary_key;not null;type:uuid"`
-	Name       string            `gorm:"not null"`
-	RetryCount int               `gorm:"not null;default:1"`
-	Payload    datatypes.JSONMap `gorm:"jsonb"`
-	CreatedAt  time.Time         `gorm:"time;autoCreateTime;not null"`
-	UpdatedAt  time.Time         `gorm:"time;autoUpdateTime;not null"`
-	Deleted    gorm.DeletedAt
-}
-
 // BeforeCreate creates a new UUID
 func (e *Collector) BeforeCreate(tx *gorm.DB) (err error) {
 	e.ID = uuid.New()
