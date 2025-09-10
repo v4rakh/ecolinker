@@ -1,7 +1,7 @@
 #
 # Build image
 #
-FROM --platform=linux/amd64 alpine:3.21 AS builder
+FROM alpine:3.21 AS builder
 LABEL maintainer="Varakh <varakh@varakh.de>"
 
 RUN apk --update upgrade && \
