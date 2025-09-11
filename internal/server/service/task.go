@@ -45,17 +45,16 @@ func NewTaskService(l LockService, ac *config.App, lc *config.Lock) (*TaskServic
 	schedulerOptions := []gocron.SchedulerOption{gocron.WithLocation(location), gocron.WithGlobalJobOptions(singletonModeOption, eventListenerOption)}
 
 	if lc.RedisEnabled {
-		var redisOptions *redis.Options
-		if redisOptions, err = redis.ParseURL(lc.RedisUrl); err != nil {
-			return nil, fmt.Errorf("cannot parse REDIS URL '%s' to set up locking for scheduler: %s", lc.RedisUrl, err)
-		}
-		redisOptions.ClientName = fmt.Sprintf("%s-task", app.Name)
+		zap.L().Info("Initializing REDIS task service")
 
-		redisClient := redis.NewClient(redisOptions)
+		var c *redis.Client
+		if c, err = config.NewRedisClient(fmt.Sprintf("%s-task", app.Name), lc.RedisUrl); err != nil {
+			return nil, fmt.Errorf("task service: cannot initialize REDIS client: %w", err)
+		}
 
 		var locker gocron.Locker
-		if locker, err = redislock.NewRedisLocker(redisClient, redislock.WithTries(lc.RedisTaskTries), redislock.WithExpiry(lc.RedisTaskLockAtMost), redislock.WithRetryDelay(lc.RedisTaskRetryDelay)); err != nil {
-			return nil, fmt.Errorf("cannot set up REDIS locker for scheduler: %s", err)
+		if locker, err = redislock.NewRedisLocker(c, redislock.WithTries(lc.RedisTaskTries), redislock.WithExpiry(lc.RedisTaskLockAtMost), redislock.WithRetryDelay(lc.RedisTaskRetryDelay)); err != nil {
+			return nil, fmt.Errorf("task service: cannot set up REDIS locker: %w", err)
 		}
 
 		schedulerOptions = append(schedulerOptions, gocron.WithDistributedLocker(locker))

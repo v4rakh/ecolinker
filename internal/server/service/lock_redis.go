@@ -26,15 +26,9 @@ func NewLockRedisService(lc *config.Lock) (LockService, error) {
 	zap.L().Info("Initializing REDIS locking service")
 
 	var err error
-	var redisOptions *redis.Options
-	if redisOptions, err = redis.ParseURL(lc.RedisUrl); err != nil {
-		return nil, fmt.Errorf("lock service: cannot parse REDIS URL '%s' to set up locking: %s", lc.RedisUrl, err)
-	}
-	redisOptions.ClientName = fmt.Sprintf("%s-lock", app.Name)
-
-	c := redis.NewClient(redisOptions)
-	if err = c.Ping(context.Background()).Err(); err != nil {
-		return nil, fmt.Errorf("lock service: failed to connect to REDIS: %w", err)
+	var c *redis.Client
+	if c, err = config.NewRedisClient(fmt.Sprintf("%s-lock", app.Name), lc.RedisUrl); err != nil {
+		return nil, fmt.Errorf("lock service: cannot initialize REDIS client: %w", err)
 	}
 
 	pool := redsyncgoredis.NewPool(c)
