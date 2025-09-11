@@ -28,6 +28,10 @@ test-unit:
 run:
 	@$(GO) run ${CMD_GO_FILES} server serve
 
+audit:
+	@$(GO) install github.com/securego/gosec/v2/cmd/gosec@latest
+	@$$(go env GOPATH)/bin/gosec -severity medium -confidence medium ./...
+
 build-local:
 	@$(GO) build -tags prod -o ${BIN_DIR}/ecolinker-${GOOS}-${GOARCH} ${CMD_GO_FILES}
 
@@ -52,4 +56,4 @@ build-windows-amd64:
 build-windows-arm64:
 	@GOOS=windows GOARCH=arm64 $(GO) build -tags prod -o ${BIN_DIR}/ecolinker-windows-arm64 ${CMD_GO_FILES}
 
-.PHONY: clean test-unit dependencies checkstyle build build-local build-all build-darwin-amd64 build-darwin-arm64 build-freebsd-amd64 build-freebsd-arm64 build-linux-amd64 build-linux-arm64 build-windows-amd64 build-windows-arm64 run generate
+.PHONY: clean test-unit dependencies checkstyle build build-local build-all build-darwin-amd64 build-darwin-arm64 build-freebsd-amd64 build-freebsd-arm64 build-linux-amd64 build-linux-arm64 build-windows-amd64 build-windows-arm64 run generate audit

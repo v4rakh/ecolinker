@@ -9,4 +9,17 @@ runs:
     - name: Native - build, test
       shell: bash
       run: |
-        make clean dependencies checkstyle test-unit build
+        make clean dependencies audit checkstyle test-unit build
+    - name: Native - scan
+      uses: https://github.com/anchore/scan-action@v6
+      with:
+        path: bin
+        output-format: table
+        output-file: bin/grype.txt
+        cache-db: true
+        fail-build: false
+    - name: Native - archive scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: grype.txt
+        path: bin/grype.txt
