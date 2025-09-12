@@ -837,7 +837,7 @@ thus your code cannot be merged.
 Once the commit is on `main`, follow these steps to **actually release** the application
 
 * Trigger the pipeline for the commit on the `main`
-    * When asked, enter the version number `v...` (with `v`!)
+    * When asked, enter the version number `v...` (**with** `v`**!**)
     * The pipeline creates a git tag and a release in the VCS management system
     * Wait until the release pipeline succeeded
 * Set a new git tag `latest` (remove old if existing) to the `v...` (this is used for [nix](#nix))
@@ -845,7 +845,7 @@ Once the commit is on `main`, follow these steps to **actually release** the app
     * Go into the git repository, make sure to fetch (including just created tag)
     * Requires [git-cliff](https://git-cliff.org/) being installed
     * Invoke from last but one release git tag to the most recent release tag (just created) with
-      `git-cliff OLDTAG..NEWTAG`, e.g., `git-cliff 6.0.0..6.1.0`
+      `git-cliff OLDTAG..NEWTAG`, e.g., `git-cliff v6.0.0..6.1.0`
     * This prints markdown to your terminal.
     * Copy the markdown and edit the release in the VCS management system
 
