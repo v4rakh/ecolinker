@@ -15,7 +15,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"maps"
 	"slices"
 	"strconv"
@@ -55,7 +55,7 @@ func (s *CollectorService) Init() error {
 
 	for _, c := range collectors {
 		if err = s.start(c); err != nil {
-			zap.L().Sugar().Errorf("Could not initialize collector '%s': %v", c.ID.String(), err)
+			log.Error().Msgf("Could not initialize collector '%s': %v", c.ID.String(), err)
 			continue
 		}
 	}
@@ -116,10 +116,10 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 		return nil, err
 	}
 
-	zap.L().Sugar().Debugf("Created collector '%+v'", e)
+	log.Debug().Msgf("Created collector '%+v'", e)
 
 	if err = s.start(e); err != nil {
-		zap.L().Sugar().Errorf("Could not start collector '%s': %v", e.ID.String(), err)
+		log.Error().Msgf("Could not start collector '%s': %v", e.ID.String(), err)
 	}
 
 	return e, nil
@@ -161,10 +161,10 @@ func (s *CollectorService) Update(id string, deviceSN string, kind constant.Coll
 
 	s.taskService.CancelByTag(s.runIdentifier(oldEntity.ID))
 
-	zap.L().Sugar().Debugf("Modified collector '%v'", id)
+	log.Debug().Msgf("Modified collector '%v'", id)
 
 	if err = s.start(newEntity); err != nil {
-		zap.L().Sugar().Errorf("Could not start collector '%s': %v", newEntity.ID.String(), err)
+		log.Error().Msgf("Could not start collector '%s': %v", newEntity.ID.String(), err)
 	}
 
 	return newEntity, nil
@@ -187,7 +187,7 @@ func (s *CollectorService) Delete(id string) error {
 
 	s.taskService.CancelByTag(s.runIdentifier(e.ID))
 
-	zap.L().Sugar().Debugf("Deleted collector '%v'", id)
+	log.Debug().Msgf("Deleted collector '%v'", id)
 
 	return nil
 }
@@ -215,7 +215,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 	var err error
 	var pb []byte
 	if pb, err = c.Payload.MarshalJSON(); err != nil {
-		zap.L().Sugar().Errorf("Could not unmarshal collector payload '%s': %v", c.ID, err)
+		log.Error().Msgf("Could not unmarshal collector payload '%s': %v", c.ID, err)
 		return
 	}
 
@@ -224,45 +224,45 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 
 	if promErr := s.prometheusService.RegisterCounter(constant.MetricCollectorInvocations, constant.MetricCollectorInvocationsHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", constant.MetricCollectorInvocations, promErr)
+			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricCollectorInvocations, promErr)
 		}
 	}
 	if promErr := s.prometheusService.IncreaseCounter(constant.MetricCollectorInvocations, genericMetricLabelValues); promErr != nil {
-		zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", constant.MetricCollectorInvocations, promErr)
+		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricCollectorInvocations, promErr)
 	}
 
 	if promErr := s.prometheusService.RegisterGauge(constant.MetricCollectorInvocationLast, constant.MetricCollectorInvocationLastHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", constant.MetricCollectorInvocationLast, promErr)
+			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricCollectorInvocationLast, promErr)
 		}
 	}
 	if promErr := s.prometheusService.SetGauge(constant.MetricCollectorInvocationLast, genericMetricLabelValues, received); promErr != nil {
-		zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", constant.MetricCollectorInvocationLast, promErr)
+		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricCollectorInvocationLast, promErr)
 	}
 
 	switch c.Kind {
 	case constant.CollectorKindDeviceParameters.String():
 		var p dto.CollectorEcoFlowHttpDeviceParameterPayload
 		if p, err = jsoninternal.UnmarshalGenericJSON[dto.CollectorEcoFlowHttpDeviceParameterPayload](pb); err != nil {
-			zap.L().Sugar().Errorf("Could not unmarshal collector payload '%s'", c.ID)
+			log.Error().Msgf("Could not unmarshal collector payload '%s'", c.ID)
 			return
 		}
 
 		var data map[string]interface{}
 		if data, err = s.ecoFlowHttpService.GetParameters(ctx, c.DeviceSN, p.Parameters); err != nil {
-			zap.L().Sugar().Errorf("Could not get device parameters for collector '%s'", c.ID)
+			log.Error().Msgf("Could not get device parameters for collector '%s'", c.ID)
 			return
 		}
 
-		zap.L().Sugar().Debugf("Collector's '%s' result: %+v", c.ID, data)
+		log.Debug().Msgf("Collector's '%s' result: %+v", c.ID, data)
 
 		var dataBytes []byte
 		if dataBytes, err = json.Marshal(data); err != nil {
-			zap.L().Sugar().Errorf("Could not parse device parameters for collector '%s'", c.ID)
+			log.Error().Msgf("Could not parse device parameters for collector '%s'", c.ID)
 		} else {
 			forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(app.Name), c.DeviceSN, strings.ToLower(c.Kind))
 			if err = s.mqttForwardService.Publish(forwardTopic, 0, true, dataBytes); err != nil {
-				zap.L().Sugar().Warnf("Unable to forward collector '%s' device parameters: %v", c.ID, err)
+				log.Warn().Msgf("Unable to forward collector '%s' device parameters: %v", c.ID, err)
 			}
 		}
 
@@ -275,7 +275,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 			metricValue, ok := float.ToFloat(valueMap.Value)
 
 			if !ok {
-				zap.L().Sugar().Warnf("Unable to cast value to prometheus metric type: %v", metricValue)
+				log.Warn().Msgf("Unable to cast value to prometheus metric type: %v", metricValue)
 				continue
 			}
 
@@ -292,19 +292,19 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 
 			if promErr := s.prometheusService.RegisterGauge(metricKey, metricHelp, metricLabelKeys); promErr != nil {
 				if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-					zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", valueMap.Key, promErr)
+					log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", valueMap.Key, promErr)
 					continue
 				}
 			}
 			if promErr := s.prometheusService.SetGauge(metricKey, metricLabelValues, metricValue); promErr != nil {
-				zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", valueMap.Key, promErr)
+				log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", valueMap.Key, promErr)
 				continue
 			}
 		}
 
 		break
 	default:
-		zap.L().Sugar().Errorf("No collector kind '%s' found", c.Kind)
+		log.Error().Msgf("No collector kind '%s' found", c.Kind)
 		s.taskService.CancelByTag(s.runIdentifier(c.ID))
 		return
 	}

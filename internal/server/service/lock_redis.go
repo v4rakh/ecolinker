@@ -10,7 +10,7 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	redsyncgoredis "github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 type LockRedisService struct {
@@ -23,7 +23,7 @@ var (
 )
 
 func NewLockRedisService(lc *config.Lock) (LockService, error) {
-	zap.L().Info("Initializing REDIS locking service")
+	log.Info().Msg("Initializing REDIS locking service")
 
 	var err error
 	var c *redis.Client
@@ -69,13 +69,13 @@ func (s *LockRedisService) LockWithOptions(ctx context.Context, resource string,
 
 	mu := s.rs.NewMutex(resource, rsOptions...)
 
-	zap.L().Sugar().Debugf("Trying to Lock '%s'", resource)
+	log.Debug().Msgf("Trying to Lock '%s'", resource)
 
 	if err := mu.LockContext(ctx); err != nil {
 		return nil, errLockRedisNotObtained
 	}
 
-	zap.L().Sugar().Debugf("Locked '%s'", resource)
+	log.Debug().Msgf("Locked '%s'", resource)
 
 	l := &redisLock{
 		mu: mu,
@@ -91,7 +91,7 @@ type redisLock struct {
 }
 
 func (r redisLock) Unlock(ctx context.Context) error {
-	zap.L().Sugar().Debugf("Unlocking '%s'", r.mu.Name())
+	log.Debug().Msgf("Unlocking '%s'", r.mu.Name())
 
 	unlocked, err := r.mu.UnlockContext(ctx)
 	if err != nil {

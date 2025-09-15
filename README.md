@@ -709,7 +709,10 @@ The following table describe most important configuration values.
 | `SERVER_TLS_CERT_PATH`            | When TLS enabled, provide the certificate path                                                                                                                                                                        |
 | `SERVER_TLS_ENABLED`              | If server uses TLS. Defaults `false`                                                                                                                                                                                  |
 | `SERVER_TLS_KEY_PATH`             | When TLS enabled, provide the key path                                                                                                                                                                                |
-| `LOGGING_LEVEL`                   | Logging level. Possible are `debug`, `info`, `warn`, `error`, `dpanic`, `panic`, `fatal`. Setting to `debug` enables high verbosity output. Defaults to `info`                                                        |
+| `LOGGING_LEVEL`                   | Logging level. Possible are `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`, `disabled`. Setting to `trace` enables high verbosity output. Defaults to `info`                                             |
+| `LOGGING_LEVEL_REQUESTS`          | Logging level for requests. Possible are `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic`, `disabled`. Setting to `trace` enables high verbosity output. Defaults to `disabled`                            |
+| `LOGGING_ENCODING`                | Determines how logs are printed to stdout. Possible are `console`, `json`. Defaults to `console`                                                                                                                      |
+| `LOGGING_ENCODING_COLORIZE`       | When logs are encoded as `console`, colorizes output. Defaults to `false`                                                                                                                                             |
 
 There are more advanced configuration settings not outlined in the simple table. Head over to the definition
 in [config.go](./internal/server/config/config.go) and look for `env:`.
@@ -752,8 +755,9 @@ Ensure to set the following environment variables for proper debug logs during d
 
 ```shell
 DEVELOPMENT=true
-LOGGING_ENCODING_LEVEL_ENCODER=capitalcolor
 LOGGING_LEVEL=debug
+LOGGING_LEVEL_REQUESTS=debug
+LOGGING_ENCODING_COLORIZE=true
 ```
 
 1. Run `make clean dependencies` to fetch dependencies
@@ -766,7 +770,7 @@ LOGGING_LEVEL=debug
 * Each entity is only used in repository and service (otherwise, mapping happens, latest at controller level)
 * Presenter layer is constructed from the entity, e.g., in REST responses and mapped
 * No entity is directly returned in any REST response
-* All log calls should be handled by `zap.L()`
+* All log calls should be handled by `log.` (zerolog)
 * Configuration is bootstrapped via separated `struct` types which are given to the service which need them
 * Error handling
     * Always throw an error with `NewServiceError` for repositories, services and handlers
@@ -777,7 +781,7 @@ LOGGING_LEVEL=debug
     * Utils can throw any error
     * Repositories, handlers and services should always properly return `error` including any `init`-like function (
       best to avoid them and call in `newXXX`). **Do not abort with `Fatalf` or similar**
-    * `log.Fatalf` or `zap.L().Fatal` is allowed in `config.go` or `server.go`
+    * `log.Fatalf` or `log.Fatal` is allowed in `config.go` or `server.go`
 * Consider reading [Effective Go](https://go.dev/doc/effective_go)
 * Consider reading [100 Go Mistakes and How to Avoid Them](https://100go.co/)
 

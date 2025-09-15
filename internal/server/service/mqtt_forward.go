@@ -8,7 +8,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"strings"
 )
 
@@ -52,27 +52,27 @@ func (s *MqttForwardService) Init() error {
 
 	opts.OnConnect = func(client mqtt.Client) {
 		optionsReader := client.OptionsReader()
-		zap.L().Sugar().Infof("Connected to broker: %s", optionsReader.Servers()[0].String())
+		log.Info().Msgf("Connected to broker: %s", optionsReader.Servers()[0].String())
 	}
 	opts.OnConnectionLost = func(client mqtt.Client, err error) {
 		optionsReader := client.OptionsReader()
-		zap.L().Sugar().Warnf("Connection to broker '%s' lost: %v", optionsReader.Servers()[0].String(), err)
+		log.Warn().Msgf("Connection to broker '%s' lost: %v", optionsReader.Servers()[0].String(), err)
 	}
 	opts.OnReconnecting = func(client mqtt.Client, options *mqtt.ClientOptions) {
 		optionsReader := client.OptionsReader()
-		zap.L().Sugar().Infof("Reconnecting to broker: %s", optionsReader.Servers()[0].String())
+		log.Info().Msgf("Reconnecting to broker: %s", optionsReader.Servers()[0].String())
 		if _, connected := s.Status(); !connected {
-			zap.L().Warn("Not connected yet")
+			log.Warn().Msg("Not connected yet")
 		}
 
-		zap.L().Sugar().Infof("Reconnected to broker: %s", optionsReader.Servers()[0].String())
+		log.Info().Msgf("Reconnected to broker: %s", optionsReader.Servers()[0].String())
 	}
 
 	s.mqttClient = mqtt.NewClient(opts)
 
 	runnable := func() {
 		if err := s.Connect(); err != nil {
-			zap.L().Sugar().Errorf("Unable to connect to forward MQTT: %v", err)
+			log.Error().Msgf("Unable to connect to forward MQTT: %v", err)
 		}
 	}
 
@@ -97,7 +97,7 @@ func (s *MqttForwardService) Connect() error {
 		return nil
 	}
 	if _, connected := s.Status(); connected {
-		zap.L().Warn("Already connected")
+		log.Warn().Msg("Already connected")
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func (s *MqttForwardService) Publish(topic string, qos byte, retained bool, payl
 		return nil
 	}
 	if _, connected := s.Status(); !connected {
-		zap.L().Warn("Not connected")
+		log.Warn().Msg("Not connected")
 		return nil
 	}
 
@@ -129,7 +129,7 @@ func (s *MqttForwardService) Publish(topic string, qos byte, retained bool, payl
 		return service_error.NewServiceError(service_error.ErrCodeGeneral, fmt.Errorf("could not publish to '%s': %w", topic, token.Error()))
 	}
 
-	zap.L().Sugar().Debugf("Published to topic '%s'", topic)
+	log.Debug().Msgf("Published to topic '%s'", topic)
 
 	return nil
 }
@@ -141,12 +141,12 @@ func (s *MqttForwardService) Disconnect() {
 		return
 	}
 	if _, connected := s.Status(); !connected {
-		zap.L().Warn("Not connected")
+		log.Warn().Msg("Not connected")
 		return
 	}
 
 	wait := s.config.WaitDisconnect
-	zap.L().Sugar().Infof("Disconnecting from broker, waiting at maximum %dms", wait)
+	log.Info().Msgf("Disconnecting from broker, waiting at maximum %dms", wait)
 	s.mqttClient.Disconnect(wait)
-	zap.L().Info("Disconnected from broker")
+	log.Info().Msg("Disconnected from broker")
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -31,13 +31,13 @@ func NewTaskService(l LockService, ac *config.App, lc *config.Lock) (*TaskServic
 	// global job options
 	singletonModeOption := gocron.WithSingletonMode(gocron.LimitModeReschedule)
 	errorEventListener := gocron.AfterJobRunsWithError(func(jobID uuid.UUID, jobName string, err error) {
-		zap.L().Sugar().Errorf("Job '%s' (%v) had a panic %v", jobName, jobID, err)
+		log.Error().Msgf("Job '%s' (%v) had a panic %v", jobName, jobID, err)
 	})
 	successEventListener := gocron.AfterJobRuns(func(jobID uuid.UUID, jobName string) {
-		zap.L().Sugar().Debugf("Job '%s' (%v) finished", jobName, jobID)
+		log.Debug().Msgf("Job '%s' (%v) finished", jobName, jobID)
 	})
 	beforeEventListener := gocron.BeforeJobRuns(func(jobID uuid.UUID, jobName string) {
-		zap.L().Sugar().Debugf("Job '%s' (%v) starts", jobName, jobID)
+		log.Debug().Msgf("Job '%s' (%v) starts", jobName, jobID)
 	})
 	eventListenerOption := gocron.WithEventListeners(beforeEventListener, successEventListener, errorEventListener)
 
@@ -45,7 +45,7 @@ func NewTaskService(l LockService, ac *config.App, lc *config.Lock) (*TaskServic
 	schedulerOptions := []gocron.SchedulerOption{gocron.WithLocation(location), gocron.WithGlobalJobOptions(singletonModeOption, eventListenerOption)}
 
 	if lc.RedisEnabled {
-		zap.L().Info("Initializing REDIS task service")
+		log.Info().Msg("Initializing REDIS task service")
 
 		var c *redis.Client
 		if c, err = config.NewRedisClient(fmt.Sprintf("%s-task", app.Name), lc.RedisUrl); err != nil {
@@ -73,19 +73,19 @@ func NewTaskService(l LockService, ac *config.App, lc *config.Lock) (*TaskServic
 // Start starts the scheduler, should be called after Init
 func (s *TaskService) Start() {
 	s.scheduler.Start()
-	zap.L().Sugar().Infof("Started %d periodic tasks", len(s.scheduler.Jobs()))
+	log.Info().Msgf("Started %d periodic tasks", len(s.scheduler.Jobs()))
 }
 
 // Stop stops the service and shuts down the scheduler
 func (s *TaskService) Stop() {
-	zap.L().Sugar().Infof("Stopping %d periodic tasks...", len(s.scheduler.Jobs()))
+	log.Info().Msgf("Stopping %d periodic tasks...", len(s.scheduler.Jobs()))
 	if err := s.scheduler.StopJobs(); err != nil {
-		zap.L().Sugar().Warnf("Cannot stop periodic tasks. Reason: %v", err)
+		log.Warn().Msgf("Cannot stop periodic tasks. Reason: %v", err)
 	}
 	if err := s.scheduler.Shutdown(); err != nil {
-		zap.L().Sugar().Warnf("Cannot shut down scheduler. Reason: %v", err)
+		log.Warn().Msgf("Cannot shut down scheduler. Reason: %v", err)
 	}
-	zap.L().Info("Stopped all periodic tasks")
+	log.Info().Msg("Stopped all periodic tasks")
 }
 
 // EnqueueOnce enqueues a new job once for execution, convenience method for gocron.WithLimitedRuns, see https://github.com/go-co-op/gocron/issues/709
@@ -107,12 +107,12 @@ func (s *TaskService) Enqueue(job gocron.JobDefinition, task gocron.Task, name s
 
 // Cancel cancels a job by ID
 func (s *TaskService) Cancel(id uuid.UUID) error {
-	zap.L().Sugar().Debugf("Removing by ID '%v'", id)
+	log.Debug().Msgf("Removing by ID '%v'", id)
 	return s.scheduler.RemoveJob(id)
 }
 
 // CancelByTag cancels a job by tags
 func (s *TaskService) CancelByTag(tags ...string) {
-	zap.L().Sugar().Debugf("Removing by tags '%v'", tags)
+	log.Debug().Msgf("Removing by tags '%v'", tags)
 	s.scheduler.RemoveByTags(tags...)
 }

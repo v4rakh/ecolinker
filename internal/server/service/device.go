@@ -6,7 +6,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 type DeviceService struct {
@@ -54,7 +54,7 @@ func (s *DeviceService) Create(sn string, kind constant.DeviceKind, label string
 		if e, err = s.repo.Create(sn, kind.String(), label); err != nil {
 			return nil, err
 		}
-		zap.L().Sugar().Debugf("Created device '%+v'", e)
+		log.Debug().Msgf("Created device '%+v'", e)
 	} else {
 		return nil, service_error.ErrResourceConflict
 	}
@@ -79,7 +79,7 @@ func (s *DeviceService) Update(sn string, kind constant.DeviceKind, label string
 		return nil, err
 	}
 
-	zap.L().Sugar().Debugf("Modified device '%v'", sn)
+	log.Debug().Msgf("Modified device '%v'", sn)
 	return e, nil
 }
 
@@ -108,6 +108,6 @@ func (s *DeviceService) Delete(id string) error {
 		s.ecoFlowMqttTask.Subscribe(sub.DeviceSN, constant.TopicKind(sub.TopicKind))
 	}
 
-	zap.L().Sugar().Debugf("Deleted device '%v'", id)
+	log.Debug().Msgf("Deleted device '%v'", id)
 	return nil
 }

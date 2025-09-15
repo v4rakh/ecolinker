@@ -5,7 +5,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 type MqttSubscriptionWriteService struct {
@@ -45,7 +45,7 @@ func (s *MqttSubscriptionWriteService) Create(deviceSN string, topicKind constan
 
 	s.ecoFlowMqttTask.Subscribe(e.DeviceSN, constant.TopicKind(e.TopicKind))
 
-	zap.L().Sugar().Debugf("Created MQTT subscription '%+v'", e)
+	log.Debug().Msgf("Created MQTT subscription '%+v'", e)
 	return e, nil
 }
 
@@ -70,7 +70,7 @@ func (s *MqttSubscriptionWriteService) Update(id string, deviceSN string, topicK
 	s.ecoFlowMqttTask.Unsubscribe(oldEntity.DeviceSN, constant.TopicKind(oldEntity.TopicKind))
 	s.ecoFlowMqttTask.Subscribe(newEntity.DeviceSN, constant.TopicKind(newEntity.TopicKind))
 
-	zap.L().Sugar().Debugf("Modified MQTT subscription '%v'", id)
+	log.Debug().Msgf("Modified MQTT subscription '%v'", id)
 	return newEntity, nil
 }
 
@@ -91,7 +91,7 @@ func (s *MqttSubscriptionWriteService) Delete(id string) error {
 
 	s.ecoFlowMqttTask.Subscribe(e.DeviceSN, constant.TopicKind(e.TopicKind))
 
-	zap.L().Sugar().Debugf("Deleted MQTT subscription '%v'", id)
+	log.Debug().Msgf("Deleted MQTT subscription '%v'", id)
 
 	return nil
 }

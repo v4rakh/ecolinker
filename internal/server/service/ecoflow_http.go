@@ -8,7 +8,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/dto"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
 	"git.myservermanager.com/varakh/go-ecoflow"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"regexp"
 	"strings"
 	"time"
@@ -103,12 +103,12 @@ func (s *EcoFlowHttpService) GetBatteries(ctx context.Context, sn string) (map[s
 
 			jsonStr, ok := v.(string)
 			if !ok {
-				zap.L().Sugar().Warnf("Battery information for '%s' is not a valid string, skipping...", v)
+				log.Warn().Msgf("Battery information for '%s' is not a valid string, skipping...", v)
 				continue
 			}
 			var obj map[string]interface{}
 			if err = json.Unmarshal([]byte(jsonStr), &obj); err != nil {
-				zap.L().Sugar().Warnf("Battery information for '%s' cannot be converted from JSON, skipping...", v)
+				log.Warn().Msgf("Battery information for '%s' cannot be converted from JSON, skipping...", v)
 				continue
 			}
 

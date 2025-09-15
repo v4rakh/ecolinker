@@ -4,7 +4,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"github.com/go-co-op/gocron/v2"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 type EcoFlowMqttTask struct {
@@ -43,7 +43,7 @@ func (s *EcoFlowMqttTask) Subscribe(deviceSN string, topicKind constant.TopicKin
 		case constant.TopicKindQuota:
 			messageHandler := NewEcoFlowMqttMessageHandler(deviceSN, topicKind, s.ecoFlowConfig.MqttDebugMessages, s.prometheusService, s.mqttForwardService)
 			if err = s.ecoFlowMqttService.Subscribe(messageHandler); err != nil {
-				zap.L().Sugar().Errorf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", deviceSN, topicKind.String(), err)
+				log.Error().Msgf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", deviceSN, topicKind.String(), err)
 				return
 			}
 			break
@@ -51,7 +51,7 @@ func (s *EcoFlowMqttTask) Subscribe(deviceSN string, topicKind constant.TopicKin
 	}
 
 	if _, enqueueErr := s.taskService.EnqueueOnce(gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()), gocron.NewTask(runnable), jobNameEcoFlowMqttSubscribe, gocron.WithDisabledDistributedJobLocker(true)); enqueueErr != nil {
-		zap.L().Sugar().Errorf("Unable to enqueue task: %v", enqueueErr)
+		log.Error().Msgf("Unable to enqueue task: %v", enqueueErr)
 	}
 }
 
@@ -62,12 +62,12 @@ func (s *EcoFlowMqttTask) Unsubscribe(deviceSN string, topicKind constant.TopicK
 
 	runnable := func() {
 		if err := s.ecoFlowMqttService.Unsubscribe(deviceSN, topicKind); err != nil {
-			zap.L().Sugar().Errorf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", deviceSN, topicKind.String(), err)
+			log.Error().Msgf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", deviceSN, topicKind.String(), err)
 			return
 		}
 	}
 
 	if _, enqueueErr := s.taskService.EnqueueOnce(gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()), gocron.NewTask(runnable), jobNameEcoFlowMqttUnsubscribe, gocron.WithDisabledDistributedJobLocker(true)); enqueueErr != nil {
-		zap.L().Sugar().Errorf("Unable to enqueue task: %v", enqueueErr)
+		log.Error().Msgf("Unable to enqueue task: %v", enqueueErr)
 	}
 }

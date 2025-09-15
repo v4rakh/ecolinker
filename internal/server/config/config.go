@@ -13,14 +13,14 @@ import (
 	migratepostgres "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/sethvargo/go-envconfig"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/skynet2/zerolog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-	"log"
-	"moul.io/zapgorm2"
+	golog "log"
+	"os"
 	"time"
 )
 
@@ -28,19 +28,19 @@ import (
 var migrationPostgresFS embed.FS
 
 type Logging struct {
-	Debug                   bool                              `env:"DEBUG,default=false"`
-	Development             bool                              `env:"DEVELOPMENT,default=false"`
-	Encoding                constant.ConfigLogEncoding        `env:"LOGGING_ENCODING,default=console" validate:"required,oneof=json console"`
-	EncodingCallerEncoder   constant.ConfigLogCallerEncoder   `env:"LOGGING_ENCODING_CALLER_ENCODER,default=short" validate:"required,oneof=full short"`
-	EncodingDurationEncoder constant.ConfigLogDurationEncoder `env:"LOGGING_ENCODING_DURATION_ENCODER,default=seconds" validate:"required,oneof=seconds nanos millis string"`
-	EncodingLevelEncoder    constant.ConfigLogLevelEncoder    `env:"LOGGING_ENCODING_LEVEL_ENCODER,default=capital" validate:"required,oneof=lowercase lowercasecolor capital capitalcolor"`
-	EncodingLevelKey        string                            `env:"LOGGING_ENCODING_LEVEL_KEY,default=level" validate:"required_if=Encoding json"`
-	EncodingMessageKey      string                            `env:"LOGGING_ENCODING_MESSAGE_KEY,default=msg" validate:"required_if=Encoding json"`
-	EncodingStacktraceKey   string                            `env:"LOGGING_ENCODING_STACKTRACE_KEY,default=stacktrace" validate:"required_if=Encoding json"`
-	EncodingTimeEncoder     constant.ConfigLogTimeEncoder     `env:"LOGGING_ENCODING_TIME_ENCODER,default=rfc3339" validate:"required,oneof=epoch epochmillis epochnanos iso8601 rfc3339 rfc3339nano"`
-	EncodingTimeKey         string                            `env:"LOGGING_ENCODING_TIME_KEY,default=ts" validate:"required_if=Encoding json"`
-	Level                   string                            `env:"LOGGING_LEVEL,default=info" validate:"required,oneof=debug info warn error dpanic panic fatal"`
-	UTC                     bool                              `env:"LOGGING_UTC"`
+	Development           bool                          `env:"DEVELOPMENT,default=false"`
+	Encoding              constant.ConfigLogEncoding    `env:"LOGGING_ENCODING,default=console" validate:"required,oneof=json console"`
+	EncodingColorize      bool                          `env:"LOGGING_ENCODING_COLORIZE,default=false"`
+	EncodingErrorKey      string                        `env:"LOGGING_ENCODING_ERROR_KEY,default=error" validate:"required"`
+	EncodingFileKey       string                        `env:"LOGGING_ENCODING_FILE_KEY,default=file" validate:"required"`
+	EncodingFuncKey       string                        `env:"LOGGING_ENCODING_FUNC_KEY,default=func" validate:"required"`
+	EncodingLevelKey      string                        `env:"LOGGING_ENCODING_LEVEL_KEY,default=level" validate:"required"`
+	EncodingMessageKey    string                        `env:"LOGGING_ENCODING_MESSAGE_KEY,default=msg" validate:"required"`
+	EncodingStacktraceKey string                        `env:"LOGGING_ENCODING_STACKTRACE_KEY,default=stacktrace" validate:"required"`
+	EncodingTimeEncoder   constant.ConfigLogTimeEncoder `env:"LOGGING_ENCODING_TIME_ENCODER,default=rfc3339" validate:"required,oneof=epoch epochmillis epochnanos iso8601 rfc3339 rfc3339nano"`
+	EncodingTimeKey       string                        `env:"LOGGING_ENCODING_TIME_KEY,default=ts" validate:"required"`
+	Level                 string                        `env:"LOGGING_LEVEL,default=info" validate:"required,oneof=trace debug info warn error fatal panic disabled"`
+	LevelRequests         string                        `env:"LOGGING_LEVEL_REQUESTS,default=disabled" validate:"required,oneof=trace debug info warn error fatal panic disabled"`
 }
 
 type App struct {
@@ -148,120 +148,21 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 	// bootstrap logging (configured independently and required before any other action)
 	var lc Logging
 	if err = envconfig.Process(ctx, &lc); err != nil {
-		log.Fatalf("Cannot load logging configuration from environment. Reason: %v", err)
+		golog.Fatalf("Cannot load logging configuration from environment. Reason: %v", err)
 	}
 	if err = validate.ValidOrError(lc); err != nil {
-		log.Fatalf("Cannot validate logging configuration. Reason: %s", err)
+		golog.Fatalf("Cannot validate logging configuration. Reason: %s", err)
 	}
 
-	var level zap.AtomicLevel
-	if level, err = zap.ParseAtomicLevel(lc.Level); err != nil {
-		log.Fatalf("Cannot parse logging level: %v", err)
-	}
-
-	var loggingEncoderConfig zapcore.EncoderConfig
-	if constant.ConfigLogEncodingJson == lc.Encoding {
-		loggingEncoderConfig = zap.NewProductionEncoderConfig()
-		loggingEncoderConfig.MessageKey = lc.EncodingMessageKey
-		loggingEncoderConfig.LevelKey = lc.EncodingLevelKey
-		loggingEncoderConfig.TimeKey = lc.EncodingTimeKey
-		loggingEncoderConfig.StacktraceKey = lc.EncodingStacktraceKey
-	} else {
-		loggingEncoderConfig = zap.NewDevelopmentEncoderConfig()
-	}
-
-	var levelEncoders = map[constant.ConfigLogLevelEncoder]zapcore.LevelEncoder{
-		constant.ConfigLogLevelEncoderLowercase:      zapcore.LowercaseLevelEncoder,
-		constant.ConfigLogLevelEncoderLowercasecolor: zapcore.LowercaseColorLevelEncoder,
-		constant.ConfigLogLevelEncoderCapital:        zapcore.CapitalLevelEncoder,
-		constant.ConfigLogLevelEncoderCapitalcolor:   zapcore.CapitalColorLevelEncoder,
-	}
-	if enc, ok := levelEncoders[lc.EncodingLevelEncoder]; ok {
-		loggingEncoderConfig.EncodeLevel = enc
-	}
-
-	var timeEncoders = map[constant.ConfigLogTimeEncoder]zapcore.TimeEncoder{
-		constant.ConfigLogTimeEncoderEpoch:       zapcore.EpochTimeEncoder,
-		constant.ConfigLogTimeEncoderEpochmillis: zapcore.EpochMillisTimeEncoder,
-		constant.ConfigLogTimeEncoderEpochnanos:  zapcore.EpochNanosTimeEncoder,
-		constant.ConfigLogTimeEncoderIso8601:     zapcore.ISO8601TimeEncoder,
-		constant.ConfigLogTimeEncoderRfc3339:     zapcore.RFC3339TimeEncoder,
-		constant.ConfigLogTimeEncoderRfc3339nano: zapcore.RFC3339NanoTimeEncoder,
-	}
-	if enc, ok := timeEncoders[lc.EncodingTimeEncoder]; ok {
-		loggingEncoderConfig.EncodeTime = enc
-	}
-
-	var durationEncoders = map[constant.ConfigLogDurationEncoder]zapcore.DurationEncoder{
-		constant.ConfigLogDurationEncoderSeconds: zapcore.SecondsDurationEncoder,
-		constant.ConfigLogDurationEncoderNanos:   zapcore.NanosDurationEncoder,
-		constant.ConfigLogDurationEncoderMillis:  zapcore.MillisDurationEncoder,
-		constant.ConfigLogDurationEncoderString:  zapcore.StringDurationEncoder,
-	}
-	if enc, ok := durationEncoders[lc.EncodingDurationEncoder]; ok {
-		loggingEncoderConfig.EncodeDuration = enc
-	}
-
-	var callerEncoders = map[constant.ConfigLogCallerEncoder]zapcore.CallerEncoder{
-		constant.ConfigLogCallerEncoderFull:  zapcore.FullCallerEncoder,
-		constant.ConfigLogCallerEncoderShort: zapcore.ShortCallerEncoder,
-	}
-	if enc, ok := callerEncoders[lc.EncodingCallerEncoder]; ok {
-		loggingEncoderConfig.EncodeCaller = enc
-	} else {
-		loggingEncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
-	}
-
-	logPaths := []string{"stderr"}
-
-	var zapConfig *zap.Config
-	if lc.Debug {
-		zapConfig = &zap.Config{
-			Level:            level,
-			Development:      lc.Development,
-			Encoding:         lc.Encoding.String(),
-			EncoderConfig:    loggingEncoderConfig,
-			OutputPaths:      logPaths,
-			ErrorOutputPaths: logPaths,
-		}
-	} else {
-		zapConfig = &zap.Config{
-			Level:       level,
-			Development: lc.Development,
-			Sampling: &zap.SamplingConfig{
-				Initial:    100,
-				Thereafter: 100,
-			},
-			Encoding:         lc.Encoding.String(),
-			EncoderConfig:    loggingEncoderConfig,
-			OutputPaths:      logPaths,
-			ErrorOutputPaths: logPaths,
-		}
-	}
-
-	zapLogger := zap.Must(zapConfig.Build())
-	defer func(zapLogger *zap.Logger) {
-		_ = zapLogger.Sync()
-	}(zapLogger)
-	zap.ReplaceGlobals(zapLogger)
+	configureLogger(&lc)
 
 	// load configuration and validate from environment
 	var c Configuration
 	if err = envconfig.Process(ctx, &c); err != nil {
-		zap.L().Sugar().Fatalf("Cannot load configuration from environment. Reason: %v", err)
+		log.Fatal().Msgf("Cannot load configuration from environment. Reason: %v", err)
 	}
 	if err = validate.ValidOrError(c); err != nil {
-		zap.L().Sugar().Fatalf("Cannot validate configuration. Reason: %s", err.Error())
-	}
-
-	gormConfig := &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}
-	if lc.Debug && c.App.Development {
-		gormZapLogger := zap.Must(zapConfig.Build())
-		defer func(gormZapLogger *zap.Logger) {
-			_ = gormZapLogger.Sync()
-		}(gormZapLogger)
-		gormLogger := zapgorm2.New(gormZapLogger)
-		gormConfig = &gorm.Config{Logger: gormLogger}
+		log.Fatal().Msgf("Cannot validate configuration. Reason: %s", err.Error())
 	}
 
 	var db *gorm.DB
@@ -269,7 +170,7 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 	var migrationDatabaseName string
 	var migrationFS source.Driver
 
-	zap.L().Sugar().Infof("Using database type '%s'", c.Database.Type)
+	log.Info().Msgf("Using database type '%s'", c.Database.Type)
 
 	if constant.ConfigDatabaseTypePostgres == c.Database.Type {
 		host := c.Database.PostgresHost
@@ -281,62 +182,70 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 		migrationDatabaseName = dbName
 
 		dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable TimeZone=%v", host, dbUser, dbPass, dbName, port, dbTZ)
-		if db, err = gorm.Open(postgres.Open(dsn), gormConfig); err != nil {
-			zap.L().Sugar().Fatalf("Could not setup database: %v", err)
+
+		gormLog := zerologgorm.NewLogger(
+			zerologgorm.WithDefaultLogLevel(zerolog.DebugLevel),
+			zerologgorm.WithSlowThreshold(500*time.Millisecond),
+			zerologgorm.WithLogParams(),
+			zerologgorm.WithIgnoreNotFoundError(),
+		)
+
+		if db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: gormLog}); err != nil {
+			log.Fatal().Msgf("Could not setup database: %v", err)
 		}
 
 		var sqlDb *sql.DB
 		if sqlDb, err = db.DB(); err != nil {
-			zap.L().Sugar().Fatalf("Could not retrieve database: %v", err)
+			log.Fatal().Msgf("Could not retrieve database: %v", err)
 		}
 
 		if err = sqlDb.Ping(); err != nil {
-			zap.L().Sugar().Fatalf("Could not connect to database: %v", err)
+			log.Fatal().Msgf("Could not connect to database: %v", err)
 		}
 
 		if migrationDriver, err = migratepostgres.WithInstance(sqlDb, &migratepostgres.Config{}); err != nil {
-			zap.L().Sugar().Fatalf("Could not create migration driver: %v", err)
+			log.Fatal().Msgf("Could not create migration driver: %v", err)
 		}
 
 		if migrationFS, err = iofs.New(migrationPostgresFS, "migrations_postgres"); err != nil {
-			zap.L().Sugar().Fatalf("Could not create migration source: %v", err)
+			log.Fatal().Msgf("Could not create migration source: %v", err)
 		}
 	}
 
 	if db == nil {
-		zap.L().Fatal("Could not setup database")
+		log.Fatal().Msgf("Could not setup database")
 	}
 
 	if !c.Database.MigrationEnabled {
-		zap.L().Warn("Database schema migration is disabled and not executed automatically. Make sure to run them manually, otherwise the application might misbehave. You can safely ignore this warning if application is started in high availability mode and you're sure necessary database schema already exists.")
+		log.Warn().Msg("Database schema migration is disabled and not executed automatically. Make sure to run them manually, otherwise the application might misbehave. You can safely ignore this warning if application is started in high availability mode and you're sure necessary database schema already exists.")
 	} else {
 		var migrator *migrate.Migrate
 		if migrator, err = migrate.NewWithInstance("iofs", migrationFS, migrationDatabaseName, migrationDriver); err != nil {
-			zap.L().Sugar().Fatalf("Could not create database migration instance: %v", err)
+			log.Fatal().Msgf("Could not create database migration instance: %v", err)
 		}
 
 		var migrationVersion uint
 		var migrationVersionDirty bool
 		if migrationVersion, migrationVersionDirty, err = migrator.Version(); err != nil {
 			if errors.Is(err, migrate.ErrNilVersion) {
-				zap.L().Info("Database migration schema is uninitialized")
+				log.Info().Msgf("Database migration schema is uninitialized")
 			} else {
-				zap.L().Sugar().Fatalf("Could not retrieve database migration version: %v", err)
+				log.Fatal().Msgf("Could not retrieve database migration version: %v", err)
 			}
 		} else {
-			zap.L().Sugar().Infof("Previous database migration version is '%d' (dirty '%v')", migrationVersion, migrationVersionDirty)
+			log.Info().Msgf("Previous database migration version is '%d' (dirty '%v')", migrationVersion, migrationVersionDirty)
 		}
 
-		zap.L().Info("Applying necessary database migration steps...")
+		log.Info().Msgf("Applying necessary database migration steps...")
 		if err = migrator.Up(); err != nil {
 			if errors.Is(err, migrate.ErrNoChange) {
-				zap.L().Info("No database schema changes detected")
+				log.Info().Msgf("No database schema changes detected")
 			} else {
-				zap.L().Sugar().Fatalf("Could not migrate database schema: %v", err)
+				log.Fatal().Msgf("Could not migrate database schema: %v", err)
 			}
 		}
 
-		zap.L().Info("Applied all necessary database migration steps successfully")
+		log.Info().Msgf("Applied all necessary database migration steps successfully")
 	}
 
 	// custom defaults and validation
@@ -348,16 +257,51 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 		}
 	}
 
-	zap.L().Sugar().Infof("Configuration: App %+v", c.App)
-	zap.L().Info("Configuration: Auth ***REDACTED***")
-	zap.L().Sugar().Infof("Configuration: Cors %+v", c.Cors)
-	zap.L().Info("Configuration: Database ***REDACTED***")
-	zap.L().Info("Configuration: EcoFlow ***REDACTED***")
-	zap.L().Info("Configuration: Lock ***REDACTED***")
-	zap.L().Sugar().Infof("Configuration: Logging %+v", lc)
-	zap.L().Info("Configuration: Prometheus ***REDACTED***")
-	zap.L().Info("Configuration: MqttForward ***REDACTED***")
-	zap.L().Sugar().Infof("Configuration: Server %+v", c.Server)
+	log.Info().Msgf("Configuration: App %+v", c.App)
+	log.Info().Msgf("Configuration: Auth ***REDACTED***")
+	log.Info().Msgf("Configuration: Cors %+v", c.Cors)
+	log.Info().Msgf("Configuration: Database ***REDACTED***")
+	log.Info().Msgf("Configuration: EcoFlow ***REDACTED***")
+	log.Info().Msgf("Configuration: Lock ***REDACTED***")
+	log.Info().Msgf("Configuration: Logging %+v", lc)
+	log.Info().Msgf("Configuration: Prometheus ***REDACTED***")
+	log.Info().Msgf("Configuration: MqttForward ***REDACTED***")
+	log.Info().Msgf("Configuration: Server %+v", c.Server)
 
 	return &c, db
+}
+
+func configureLogger(cfg *Logging) {
+	var level zerolog.Level
+	var err error
+	if level, err = zerolog.ParseLevel(cfg.Level); err != nil {
+		golog.Fatalf("Cannot parse logging level: %v", err)
+	}
+	zerolog.SetGlobalLevel(level)
+
+	zerolog.CallerFieldName = cfg.EncodingFuncKey
+	zerolog.ErrorFieldName = cfg.EncodingErrorKey
+	zerolog.ErrorStackFieldName = cfg.EncodingStacktraceKey
+	zerolog.LevelFieldName = cfg.EncodingLevelKey
+	zerolog.MessageFieldName = cfg.EncodingMessageKey
+	zerolog.TimestampFieldName = cfg.EncodingTimeKey
+
+	var timeEncoders = map[constant.ConfigLogTimeEncoder]string{
+		constant.ConfigLogTimeEncoderEpoch:       zerolog.TimeFormatUnix,
+		constant.ConfigLogTimeEncoderEpochmillis: zerolog.TimeFormatUnixMs,
+		constant.ConfigLogTimeEncoderEpochnanos:  zerolog.TimeFormatUnixNano,
+		constant.ConfigLogTimeEncoderIso8601:     "2006-01-02T15:04:05-0700",
+		constant.ConfigLogTimeEncoderRfc3339:     time.RFC3339,
+		constant.ConfigLogTimeEncoderRfc3339nano: time.RFC3339Nano,
+	}
+	if enc, ok := timeEncoders[cfg.EncodingTimeEncoder]; ok {
+		zerolog.TimeFieldFormat = enc
+	}
+
+	if constant.ConfigLogEncodingJson == cfg.Encoding {
+		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	} else {
+		log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat, NoColor: !cfg.EncodingColorize}).With().Timestamp().Logger()
+	}
 }

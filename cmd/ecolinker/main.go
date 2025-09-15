@@ -6,7 +6,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server"
 	"git.myservermanager.com/varakh/ecolinker/internal/terminal"
 	"github.com/urfave/cli/v3"
-	"log"
+	golog "log"
 	"os"
 )
 
@@ -65,6 +65,6 @@ func main() {
 	}
 
 	if err := application.Run(context.Background(), os.Args); err != nil {
-		log.Fatal(err)
+		golog.Fatal(err)
 	}
 }

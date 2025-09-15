@@ -5,17 +5,8 @@ package constant
 // ENUM(json, console)
 type ConfigLogEncoding string
 
-// ENUM(lowercase, lowercasecolor, capital, capitalcolor)
-type ConfigLogLevelEncoder string
-
 // ENUM(epoch, epochmillis, epochnanos, iso8601, rfc3339, rfc3339nano)
 type ConfigLogTimeEncoder string
-
-// ENUM(seconds, nanos, millis, string)
-type ConfigLogDurationEncoder string
-
-// ENUM(full, short)
-type ConfigLogCallerEncoder string
 
 // ENUM(postgres)
 type ConfigDatabaseType string

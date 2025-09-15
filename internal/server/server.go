@@ -10,11 +10,10 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/handler"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service"
-	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v3"
 	"go.uber.org/automaxprocs/maxprocs"
-	"go.uber.org/zap"
 	"net/http"
 	"os"
 	"os/signal"
@@ -37,11 +36,11 @@ func start(c context.Context) {
 	// configuration init
 	cfg, db := config.LoadFromEnvironment(c)
 
-	zap.L().Sugar().Infof("Starting %s %s", app.Name, app.Version)
+	log.Info().Msgf("Starting %s %s", app.Name, app.Version)
 
 	// adhere to GOMAXPROCS, but silence default output
 	_, _ = maxprocs.Set(maxprocs.Logger(nil))
-	zap.L().Sugar().Debugf("GOMAXPROCS '%d'", runtime.GOMAXPROCS(0))
+	log.Debug().Msgf("GOMAXPROCS '%d'", runtime.GOMAXPROCS(0))
 
 	// set gin mode derived
 	if cfg.App.Development {
@@ -51,14 +50,13 @@ func start(c context.Context) {
 	}
 
 	corsMiddleware := middlewareCors(cfg.Cors)
-	zapMiddleware := ginzap.Ginzap(zap.L(), "", cfg.Logging.UTC)
-	recoveryMiddleware := ginzap.RecoveryWithZap(zap.L(), true)
-	errorMiddleware := middlewareErrorHandler()
-	errorRecoveryMiddleware := middlewareErrorRecoveryHandler()
+	loggingMiddleware := middlewareLogging(cfg.Logging)
+	recoveryMiddleware := middlewarePanicRecoveryHandler(cfg.Logging)
+	errorMiddleware := middlewareErrorTransformer()
 
 	// routers init
-	appRouter := newEngine(zapMiddleware, recoveryMiddleware, corsMiddleware, middlewareAppName(), middlewareAppVersion(), errorMiddleware, errorRecoveryMiddleware)
-	promRouter := newEngine(zapMiddleware, recoveryMiddleware, errorMiddleware, errorRecoveryMiddleware)
+	appRouter := newEngine(loggingMiddleware, recoveryMiddleware, corsMiddleware, middlewareAppName(), middlewareAppVersion(), errorMiddleware)
+	promRouter := newEngine(loggingMiddleware, recoveryMiddleware, errorMiddleware)
 
 	// repositories init
 	deviceRepo := repository.NewDeviceDbRepo(db)
@@ -69,37 +67,35 @@ func start(c context.Context) {
 	lockService := service.NewLockMemService()
 	if cfg.Lock.RedisEnabled {
 		var e error
-		lockService, e = service.NewLockRedisService(cfg.Lock)
-
-		if err != nil {
-			zap.L().Fatal("Failed to create lock service", zap.Error(e))
+		if lockService, e = service.NewLockRedisService(cfg.Lock); e != nil {
+			log.Fatal().Msgf("Failed to create lock service: %+v", e)
 		}
 	}
 
 	var taskService *service.TaskService
 	if taskService, err = service.NewTaskService(lockService, cfg.App, cfg.Lock); err != nil {
-		zap.L().Sugar().Fatalf("Task service creation failed: %v", err)
+		log.Fatal().Msgf("Task service creation failed: %v", err)
 	}
 
 	ecoFlowHttpService := service.NewEcoFlowHttpService(cfg.EcoFlow)
 
 	mqttForwardService := service.NewMqttForwardService(taskService, cfg.MqttForward)
 	if err = mqttForwardService.Init(); err != nil {
-		zap.L().Sugar().Fatalf("MQTT forward service initialization failed: %v", err)
+		log.Fatal().Msgf("MQTT forward service initialization failed: %v", err)
 	}
 
 	separatePromServer := cfg.Prometheus.Enabled && cfg.Prometheus.Port != cfg.Server.Port
 	var prometheusService *service.PrometheusService
 	if cfg.Prometheus.Enabled && separatePromServer {
 		prometheusService = service.NewPrometheusService(promRouter, cfg.Prometheus)
-		zap.L().Info("Starting separate Prometheus server")
+		log.Info().Msgf("Starting separate Prometheus server")
 	} else if cfg.Prometheus.Enabled && !separatePromServer {
 		prometheusService = service.NewPrometheusService(appRouter, cfg.Prometheus)
-		zap.L().Info("Starting embedded Prometheus server")
+		log.Info().Msgf("Starting embedded Prometheus server")
 	}
 	if cfg.Prometheus.Enabled {
 		if err = prometheusService.Init(); err != nil {
-			zap.L().Sugar().Fatalf("Prometheus service initialization failed: %v", err)
+			log.Fatal().Msgf("Prometheus service initialization failed: %v", err)
 		}
 		// always instrument tracking for the app router
 		appRouter.Use(prometheusService.GetProm().Instrument())
@@ -109,7 +105,7 @@ func start(c context.Context) {
 
 	ecoFlowMqttService := service.NewEcoFlowMqttService(ecoFlowHttpService, mqttSubReadService, mqttForwardService, prometheusService, taskService, cfg.EcoFlow)
 	if err = ecoFlowMqttService.Init(); err != nil {
-		zap.L().Sugar().Fatalf("EcoFlow service initialization failed: %v", err)
+		log.Fatal().Msgf("EcoFlow service initialization failed: %v", err)
 	}
 
 	ecoFlowMqttTask := service.NewEcoFlowMqttTask(ecoFlowMqttService, mqttForwardService, prometheusService, taskService, cfg.EcoFlow)
@@ -118,12 +114,12 @@ func start(c context.Context) {
 
 	collectorService := service.NewCollectorService(ecoFlowHttpService, mqttForwardService, taskService, prometheusService, collectorRepo)
 	if err = collectorService.Init(); err != nil {
-		zap.L().Sugar().Fatalf("Collector service initialization failed: %v", err)
+		log.Fatal().Msgf("Collector service initialization failed: %v", err)
 	}
 
 	prometheusTask := service.NewPrometheusTask(cfg.Prometheus, ecoFlowMqttService, mqttForwardService, prometheusService, taskService)
 	if err = prometheusTask.Init(); err != nil {
-		zap.L().Sugar().Fatalf("Task prometheus service initialization failed: %v", err)
+		log.Fatal().Msgf("Task prometheus service initialization failed: %v", err)
 	}
 	taskService.Start()
 
@@ -152,7 +148,7 @@ func start(c context.Context) {
 			return
 		}
 	} else {
-		zap.L().Fatal("No valid auth mode found")
+		log.Fatal().Msgf("No valid auth mode found")
 	}
 
 	apiAuthGroup := appRouter.Group(fmt.Sprintf("%sapi/v1", cfg.Server.BasePath), authMethodHandler)
@@ -200,7 +196,7 @@ func start(c context.Context) {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	zap.L().Info("Shutting down...")
+	log.Info().Msgf("Shutting down...")
 
 	timeoutCtx, timeoutCancel := context.WithTimeout(c, cfg.Server.Timeout)
 	defer timeoutCancel()
@@ -217,16 +213,16 @@ func start(c context.Context) {
 
 	select {
 	case <-shutdownDone:
-		zap.L().Info("Exited")
+		log.Info().Msgf("Exited")
 	case <-timeoutCtx.Done():
-		zap.L().Sugar().Infof("Shutdown timeout of '%v' expired, exiting forcefully...", cfg.Server.Timeout)
+		log.Info().Msgf("Shutdown timeout of '%v' expired, exiting forcefully...", cfg.Server.Timeout)
 		os.Exit(1)
 	}
 }
 
 func newServer(r *gin.Engine, address string) *http.Server {
 	if r == nil || address == "" {
-		zap.L().Fatal("Failed to create server, engine or address is nil")
+		log.Fatal().Msgf("Failed to create server, engine or address is nil")
 		return nil
 	}
 
@@ -239,7 +235,7 @@ func newServer(r *gin.Engine, address string) *http.Server {
 func startServer(s *http.Server, cfg *config.Server) {
 	go func() {
 		var e error
-		zap.L().Sugar().Infof("Server listening on '%s'", s.Addr)
+		log.Info().Msgf("Server listening on '%s'", s.Addr)
 
 		if cfg.TlsEnabled {
 			e = s.ListenAndServeTLS(cfg.TlsCertPath, cfg.TlsKeyPath)
@@ -248,7 +244,7 @@ func startServer(s *http.Server, cfg *config.Server) {
 		}
 
 		if e != nil && !errors.Is(e, http.ErrServerClosed) {
-			zap.L().Sugar().Fatalf("Server cannot be started: %v", e)
+			log.Fatal().Msgf("Server cannot be started: %v", e)
 		}
 	}()
 }
@@ -259,10 +255,10 @@ func stopServer(ctx context.Context, s *http.Server) {
 	}
 
 	if err := s.Shutdown(ctx); err != nil {
-		zap.L().Sugar().Fatalf("Shutdown failed, exited directly: %v", err)
+		log.Fatal().Msgf("Shutdown failed, exited directly: %v", err)
 	}
 
-	zap.L().Sugar().Infof("Shutdown for '%s' complete", s.Addr)
+	log.Info().Msgf("Shutdown for '%s' complete", s.Addr)
 }
 
 func newEngine(middleware ...gin.HandlerFunc) *gin.Engine {

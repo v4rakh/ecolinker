@@ -9,7 +9,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/go-ecoflow"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"maps"
 	"slices"
 	"strconv"
@@ -55,44 +55,44 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 
 	if promErr := h.prometheusService.RegisterCounter(constant.MetricEcoFlowMqttMessagesReceived, constant.MetricEcoFlowMqttMessagesReceivedHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessagesReceived, promErr)
+			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessagesReceived, promErr)
 		}
 	}
 
 	if promErr := h.prometheusService.IncreaseCounter(constant.MetricEcoFlowMqttMessagesReceived, genericMetricLabelValues); promErr != nil {
-		zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessagesReceived, promErr)
+		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessagesReceived, promErr)
 	}
 
 	if promErr := h.prometheusService.RegisterGauge(constant.MetricEcoFlowMqttMessageLastReceived, constant.MetricEcoFlowMqttMessageLastReceivedHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceived, promErr)
+			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceived, promErr)
 		}
 	}
 	if promErr := h.prometheusService.SetGauge(constant.MetricEcoFlowMqttMessageLastReceived, genericMetricLabelValues, received); promErr != nil {
-		zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceived, promErr)
+		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceived, promErr)
 	}
 
 	var err error
 	var data ecoflow.MqttOpenMessage
 
 	if err = json.Unmarshal(message.Payload(), &data); err != nil {
-		zap.L().Sugar().Errorf("Unable to parse message from topic '%s': %v", message.Topic(), err)
+		log.Error().Msgf("Unable to parse message from topic '%s': %v", message.Topic(), err)
 		return
 	}
 
 	if h.DebugMessages {
-		zap.L().Sugar().Debugf("Message from topic '%s': %+v", message.Topic(), data)
+		log.Debug().Msgf("Message from topic '%s': %+v", message.Topic(), data)
 		var b []byte
 		if b, err = json.MarshalIndent(data, "", "  "); err != nil {
-			zap.L().Sugar().Warnf("Unable to marshal message: %v", err)
+			log.Warn().Msgf("Unable to marshal message: %v", err)
 		} else {
-			zap.L().Sugar().Debugf("Parsed message payload: %s", string(b))
+			log.Debug().Msgf("Parsed message payload: %s", string(b))
 		}
 	}
 
 	forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(app.Name), h.DeviceSN, strings.ToLower(h.TopicKind.String()))
 	if err = h.mqttForwardService.Publish(forwardTopic, message.Qos(), message.Retained(), message.Payload()); err != nil {
-		zap.L().Sugar().Warnf("Unable to forward message: %v", err)
+		log.Warn().Msgf("Unable to forward message: %v", err)
 	}
 
 	if data.Param == nil || data.Param != nil && len(data.Param) == 0 {
@@ -101,11 +101,11 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 
 	if promErr := h.prometheusService.RegisterGauge(constant.MetricEcoFlowMqttMessageLastReceivedWithPayload, constant.MetricEcoFlowMqttMessageLastReceivedWithPayloadHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceived, promErr)
+			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceived, promErr)
 		}
 	}
 	if promErr := h.prometheusService.SetGauge(constant.MetricEcoFlowMqttMessageLastReceivedWithPayload, genericMetricLabelValues, received); promErr != nil {
-		zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceivedWithPayloadHelp, promErr)
+		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricEcoFlowMqttMessageLastReceivedWithPayloadHelp, promErr)
 	}
 
 	flattenedPayload := make(map[string]interface{})
@@ -114,9 +114,9 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 	if h.DebugMessages {
 		var b []byte
 		if b, err = json.MarshalIndent(flattenedPayload, "", "  "); err != nil {
-			zap.L().Sugar().Warnf("Unable to marshal message: %v", err)
+			log.Warn().Msgf("Unable to marshal message: %v", err)
 		} else {
-			zap.L().Sugar().Debugf("Flattened message param payload: %s", string(b))
+			log.Debug().Msgf("Flattened message param payload: %s", string(b))
 		}
 	}
 
@@ -126,7 +126,7 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 		metricValue, ok := float.ToFloat(valueMap.Value)
 
 		if !ok {
-			zap.L().Sugar().Warnf("Unable to cast value to prometheus metric type: %v", metricValue)
+			log.Warn().Msgf("Unable to cast value to prometheus metric type: %v", metricValue)
 			continue
 		}
 
@@ -144,12 +144,12 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 
 		if promErr := h.prometheusService.RegisterGauge(metricKey, metricHelp, metricLabelKeys); promErr != nil {
 			if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-				zap.L().Sugar().Warnf("Unable to register prometheus metric for '%s': %v", valueMap.Key, promErr)
+				log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", valueMap.Key, promErr)
 				continue
 			}
 		}
 		if promErr := h.prometheusService.SetGauge(metricKey, metricLabelValues, metricValue); promErr != nil {
-			zap.L().Sugar().Warnf("Unable to set prometheus metric for '%s': %v", valueMap.Key, promErr)
+			log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", valueMap.Key, promErr)
 			continue
 		}
 	}

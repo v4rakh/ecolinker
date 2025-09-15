@@ -5,7 +5,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"github.com/go-co-op/gocron/v2"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
 
 type PrometheusTask struct {
@@ -43,18 +43,18 @@ func (s *PrometheusTask) configurePrometheusRefreshTask() error {
 	runnable := func() {
 		enabledEcoFlow, connectedEcoFlow := s.ecoFlowMqttService.Status()
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricEcoFlowMqttEnabled, float.BoolToFloat(enabledEcoFlow)); err != nil {
-			zap.L().Sugar().Errorf("Could not refresh EcoFlow MQTT enabled status. Reason: %s", err.Error())
+			log.Error().Msgf("Could not refresh EcoFlow MQTT enabled status. Reason: %s", err.Error())
 		}
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricEcoFlowMqttConnected, float.BoolToFloat(connectedEcoFlow)); err != nil {
-			zap.L().Sugar().Errorf("Could not refresh EcoFlow MQTT connected status. Reason: %s", err.Error())
+			log.Error().Msgf("Could not refresh EcoFlow MQTT connected status. Reason: %s", err.Error())
 		}
 
 		enabledMqttForward, connectedMqttForward := s.mqttForwardService.Status()
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricMqttForwardEnabled, float.BoolToFloat(enabledMqttForward)); err != nil {
-			zap.L().Sugar().Errorf("Could not refresh MQTT forward enabled status. Reason: %s", err.Error())
+			log.Error().Msgf("Could not refresh MQTT forward enabled status. Reason: %s", err.Error())
 		}
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricMqttForwardConnected, float.BoolToFloat(connectedMqttForward)); err != nil {
-			zap.L().Sugar().Errorf("Could not refresh MQTT forward connected status. Reason: %s", err.Error())
+			log.Error().Msgf("Could not refresh MQTT forward connected status. Reason: %s", err.Error())
 		}
 	}
 

@@ -13,7 +13,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 	"strings"
 	"sync"
 )
@@ -69,23 +69,23 @@ func (s *EcoFlowMqttService) Init() error {
 	mqttClientConfig := ecoflow.MqttClientConfiguration{
 		OnConnect: func(client mqtt.Client) {
 			optionsReader := client.OptionsReader()
-			zap.L().Sugar().Infof("Connected to broker: %s", optionsReader.Servers()[0].String())
+			log.Info().Msgf("Connected to broker: %s", optionsReader.Servers()[0].String())
 			s.SyncSubscriptions()
 		},
 		OnConnectionLost: func(client mqtt.Client, err error) {
 			optionsReader := client.OptionsReader()
-			zap.L().Sugar().Warnf("Connection to broker '%s' lost: %v", optionsReader.Servers()[0].String(), err)
+			log.Warn().Msgf("Connection to broker '%s' lost: %v", optionsReader.Servers()[0].String(), err)
 			s.ClearSubscriptions()
 		},
 		OnReconnect: func(client mqtt.Client, options *mqtt.ClientOptions) {
 			optionsReader := client.OptionsReader()
-			zap.L().Sugar().Infof("Reconnecting to broker: %s", optionsReader.Servers()[0].String())
+			log.Info().Msgf("Reconnecting to broker: %s", optionsReader.Servers()[0].String())
 			if _, connected := s.Status(); !connected {
-				zap.L().Warn("Not connected yet")
+				log.Warn().Msg("Not connected yet")
 				return
 			}
 
-			zap.L().Sugar().Infof("Reconnected to broker: %s", optionsReader.Servers()[0].String())
+			log.Info().Msgf("Reconnected to broker: %s", optionsReader.Servers()[0].String())
 		},
 		MaxReconnectInterval: s.config.MqttMaxReconnectInterval,
 	}
@@ -112,7 +112,7 @@ func (s *EcoFlowMqttService) Init() error {
 
 	runnable := func() {
 		if conErr := s.Connect(); conErr != nil {
-			zap.L().Sugar().Errorf("Unable to connect to EcoFlow MQTT: %v", conErr)
+			log.Error().Msgf("Unable to connect to EcoFlow MQTT: %v", conErr)
 		}
 	}
 
@@ -128,7 +128,7 @@ func (s *EcoFlowMqttService) SyncSubscriptions() {
 		var err error
 		var subs []*model.MqttSubscription
 		if subs, err = s.mqttSubRetrievalService.GetAll(); err != nil {
-			zap.L().Sugar().Errorf("Cannot synchronize MQTT subscriptions, retrieval failed: %v", err)
+			log.Error().Msgf("Cannot synchronize MQTT subscriptions, retrieval failed: %v", err)
 			return
 		}
 
@@ -138,7 +138,7 @@ func (s *EcoFlowMqttService) SyncSubscriptions() {
 			case constant.TopicKindQuota.String():
 				messageHandler := NewEcoFlowMqttMessageHandler(sub.DeviceSN, constant.TopicKind(sub.TopicKind), s.config.MqttDebugMessages, s.prometheusService, s.mqttForwardService)
 				if err = s.Subscribe(messageHandler); err != nil {
-					zap.L().Sugar().Errorf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", sub.DeviceSN, sub.TopicKind, err)
+					log.Error().Msgf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", sub.DeviceSN, sub.TopicKind, err)
 					continue
 				}
 				break
@@ -147,7 +147,7 @@ func (s *EcoFlowMqttService) SyncSubscriptions() {
 	}
 
 	if _, enqueueErr := s.taskService.EnqueueOnce(gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()), gocron.NewTask(runnable), jobNameEcoFlowMqttSync, gocron.WithDisabledDistributedJobLocker(false)); enqueueErr != nil {
-		zap.L().Sugar().Errorf("Unable to enqueue task: %v", enqueueErr)
+		log.Error().Msgf("Unable to enqueue task: %v", enqueueErr)
 	}
 }
 
@@ -162,7 +162,7 @@ func (s *EcoFlowMqttService) Subscribe(handler *EcoFlowMqttMessageHandler) error
 		return nil
 	}
 	if _, connected := s.Status(); !connected {
-		zap.L().Warn("Not connected")
+		log.Warn().Msg("Not connected")
 		return nil
 	}
 
@@ -172,18 +172,18 @@ func (s *EcoFlowMqttService) Subscribe(handler *EcoFlowMqttMessageHandler) error
 	topicName := s.topicNameFrom(handler.DeviceSN, handler.TopicKind)
 
 	if _, ok := s.subscriptions.values[topicName]; ok {
-		zap.L().Sugar().Errorf("Cannot subscribe to topic '%s': %v", topicName, ErrEcoFlowAlreadySubscribed)
+		log.Error().Msgf("Cannot subscribe to topic '%s': %v", topicName, ErrEcoFlowAlreadySubscribed)
 		return ErrEcoFlowAlreadySubscribed
 	}
 
 	if err := s.mqttClient.SubscribeToTopics([]string{topicName}, handler.HandleMessage); err != nil {
-		zap.L().Sugar().Errorf("Cannot subscribe to topic '%s': %v", topicName, err)
+		log.Error().Msgf("Cannot subscribe to topic '%s': %v", topicName, err)
 		return service_error.NewServiceError(service_error.ErrCodeGeneral, fmt.Errorf("cannot subscribe to topic '%s': %w", topicName, err))
 	}
 
 	s.subscriptions.values[topicName] = struct{}{}
 
-	zap.L().Sugar().Infof("Subscribed to topic '%s'", topicName)
+	log.Info().Msgf("Subscribed to topic '%s'", topicName)
 	return nil
 }
 
@@ -193,7 +193,7 @@ func (s *EcoFlowMqttService) Unsubscribe(deviceSN string, topicKind constant.Top
 		return nil
 	}
 	if _, connected := s.Status(); !connected {
-		zap.L().Warn("Not connected")
+		log.Warn().Msg("Not connected")
 		return nil
 	}
 
@@ -207,13 +207,13 @@ func (s *EcoFlowMqttService) Unsubscribe(deviceSN string, topicKind constant.Top
 	}
 
 	if err := s.mqttClient.UnsubscribeFromTopics([]string{topicName}); err != nil {
-		zap.L().Sugar().Errorf("Cannot unsubscribe from topic '%s': %v", topicName, err)
+		log.Error().Msgf("Cannot unsubscribe from topic '%s': %v", topicName, err)
 		return service_error.NewServiceError(service_error.ErrCodeGeneral, fmt.Errorf("cannot unsubscribe from topic '%s': %w", topicName, err))
 	}
 
 	delete(s.subscriptions.values, topicName)
 
-	zap.L().Sugar().Infof("Unsubscribed from topic '%s'", topicName)
+	log.Info().Msgf("Unsubscribed from topic '%s'", topicName)
 	return nil
 }
 
@@ -223,7 +223,7 @@ func (s *EcoFlowMqttService) ClearSubscriptions() {
 	defer s.subscriptions.Unlock()
 
 	clear(s.subscriptions.values)
-	zap.L().Debug("Cleared subscriptions")
+	log.Debug().Msgf("Cleared subscriptions")
 }
 
 // Connect connects to MQTT
@@ -233,7 +233,7 @@ func (s *EcoFlowMqttService) Connect() error {
 		return nil
 	}
 	if _, connected := s.Status(); connected {
-		zap.L().Warn("Already connected")
+		log.Warn().Msg("Already connected")
 		return nil
 	}
 
@@ -252,14 +252,14 @@ func (s *EcoFlowMqttService) Disconnect() {
 		return
 	}
 	if _, connected := s.Status(); !connected {
-		zap.L().Warn("Not connected")
+		log.Warn().Msg("Not connected")
 		return
 	}
 
 	wait := s.config.MqttWaitDisconnect
-	zap.L().Sugar().Infof("Disconnecting from broker, waiting at maximum %dms", wait)
+	log.Info().Msgf("Disconnecting from broker, waiting at maximum %dms", wait)
 	s.mqttClient.Disconnect(wait)
-	zap.L().Info("Disconnected from broker")
+	log.Info().Msg("Disconnected from broker")
 }
 
 // topicNameFrom constructs a new topic name given the device's serial number, the kind of the topic
