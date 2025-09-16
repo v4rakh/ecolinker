@@ -299,9 +299,9 @@ func configureLogger(cfg *Logging) {
 	}
 
 	if constant.ConfigLogEncodingJson == cfg.Encoding {
-		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
 
 	} else {
-		log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat, NoColor: !cfg.EncodingColorize}).With().Timestamp().Logger()
+		log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat, NoColor: !cfg.EncodingColorize}).With().Timestamp().Caller().Logger()
 	}
 }
