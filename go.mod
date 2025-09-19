@@ -7,7 +7,7 @@ require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/Depado/ginprom v1.8.1
 	github.com/adrg/xdg v0.5.3
-	github.com/eclipse/paho.mqtt.golang v1.5.0
+	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-co-op/gocron-redis-lock/v2 v2.1.0
