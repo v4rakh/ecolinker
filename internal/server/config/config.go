@@ -28,7 +28,6 @@ import (
 var migrationPostgresFS embed.FS
 
 type Logging struct {
-	Development           bool                          `env:"DEVELOPMENT,default=false"`
 	Encoding              constant.ConfigLogEncoding    `env:"LOGGING_ENCODING,default=console" validate:"required,oneof=json console"`
 	EncodingColorize      bool                          `env:"LOGGING_ENCODING_COLORIZE,default=false"`
 	EncodingErrorKey      string                        `env:"LOGGING_ENCODING_ERROR_KEY,default=error" validate:"required"`

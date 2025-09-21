@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/handler"
@@ -12,7 +12,6 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"github.com/urfave/cli/v3"
 	"go.uber.org/automaxprocs/maxprocs"
 	"net/http"
 	"os"
@@ -21,22 +20,28 @@ import (
 	"syscall"
 )
 
-var ServeCmd = &cli.Command{
-	Name:  "serve",
-	Usage: "Starts the server and keeps it running",
-	Action: func(ctx context.Context, _ *cli.Command) error {
-		start(ctx)
-		return nil
-	},
+type Server struct {
+	ctx context.Context
 }
 
-func start(c context.Context) {
+func New(ctx *context.Context) *Server {
+	s := &Server{}
+	if ctx == nil {
+		s.ctx = context.Background()
+	} else {
+		s.ctx = *ctx
+	}
+
+	return s
+}
+
+func (a *Server) Start() {
 	var err error
 
 	// configuration init
-	cfg, db := config.LoadFromEnvironment(c)
+	cfg, db := config.LoadFromEnvironment(a.ctx)
 
-	log.Info().Msgf("Starting %s %s", app.Name, app.Version)
+	log.Info().Msgf("Starting %s %s", meta.Name, meta.Version)
 
 	// adhere to GOMAXPROCS, but silence default output
 	_, _ = maxprocs.Set(maxprocs.Logger(nil))
@@ -97,7 +102,7 @@ func start(c context.Context) {
 		if err = prometheusService.Init(); err != nil {
 			log.Fatal().Msgf("Prometheus service initialization failed: %v", err)
 		}
-		// always instrument tracking for the app router
+		// always instrument tracking for the meta router
 		appRouter.Use(prometheusService.GetProm().Instrument())
 	}
 
@@ -119,7 +124,7 @@ func start(c context.Context) {
 
 	prometheusTask := service.NewPrometheusTask(cfg.Prometheus, ecoFlowMqttService, mqttForwardService, prometheusService, taskService)
 	if err = prometheusTask.Init(); err != nil {
-		log.Fatal().Msgf("Task prometheus service initialization failed: %v", err)
+		log.Fatal().Msgf("Task prometheus task initialization failed: %v", err)
 	}
 	taskService.Start()
 
@@ -198,7 +203,7 @@ func start(c context.Context) {
 
 	log.Info().Msgf("Shutting down...")
 
-	timeoutCtx, timeoutCancel := context.WithTimeout(c, cfg.Server.Timeout)
+	timeoutCtx, timeoutCancel := context.WithTimeout(a.ctx, cfg.Server.Timeout)
 	defer timeoutCancel()
 
 	shutdownDone := make(chan struct{})
@@ -206,8 +211,8 @@ func start(c context.Context) {
 		taskService.Stop()
 		ecoFlowMqttService.Disconnect()
 		mqttForwardService.Disconnect()
-		stopServer(c, appSrv)
-		stopServer(c, prometheusSrv)
+		stopServer(a.ctx, appSrv)
+		stopServer(a.ctx, prometheusSrv)
 		close(shutdownDone)
 	}()
 

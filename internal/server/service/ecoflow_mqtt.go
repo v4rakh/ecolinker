@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
@@ -101,7 +101,7 @@ func (s *EcoFlowMqttService) Init() error {
 		Url:                 mqttCredentialsResponse.Data.Url,
 		Port:                mqttCredentialsResponse.Data.Port,
 		Protocol:            mqttCredentialsResponse.Data.Protocol,
-		ClientId:            fmt.Sprintf("%s_%s", strings.ToUpper(app.Name), uuid.New()),
+		ClientId:            fmt.Sprintf("%s_%s", strings.ToUpper(meta.Name), uuid.New()),
 	}
 
 	if mqttClient, err = ecoflow.NewOpenMqttClient(mqttConnectionConfig, mqttClientConfig); err != nil {

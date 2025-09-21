@@ -1,7 +1,6 @@
 package str
 
 import (
-	"sort"
 	"strings"
 )
 
@@ -36,31 +35,4 @@ func AllContained(a, b []string) bool {
 		}
 	}
 	return true
-}
-
-// EqualsIgnoreOrder compares slices ignoring order
-func EqualsIgnoreOrder(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	aCopy := append([]string(nil), a...)
-	bCopy := append([]string(nil), b...)
-	sort.Strings(aCopy)
-	sort.Strings(bCopy)
-	for i := range aCopy {
-		if aCopy[i] != bCopy[i] {
-			return false
-		}
-	}
-	return true
-}
-
-// Contains determines if value is in a slice
-func Contains(slice []string, val string) bool {
-	for _, item := range slice {
-		if item == val {
-			return true
-		}
-	}
-	return false
 }

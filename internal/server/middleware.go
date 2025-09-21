@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/api"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/handler"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
@@ -40,7 +40,7 @@ func middlewareLogging(lc *config.Logging) gin.HandlerFunc {
 	}
 }
 
-// middlewarePanicRecoveryHandler recovers app from panics, logs them and returns proper response
+// middlewarePanicRecoveryHandler recovers meta from panics, logs them and returns proper response
 // logs the error and stack trace using zerolog.Logger, and returns a 500 response.
 func middlewarePanicRecoveryHandler(lc *config.Logging) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -59,7 +59,7 @@ func middlewarePanicRecoveryHandler(lc *config.Logging) gin.HandlerFunc {
 // middlewareAppName adds custom HTTP header to each request
 func middlewareAppName() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header(api.HeaderAppName, app.Name)
+		c.Header(api.HeaderAppName, meta.Name)
 		c.Next()
 	}
 }
@@ -67,7 +67,7 @@ func middlewareAppName() gin.HandlerFunc {
 // middlewareAppVersion adds custom HTTP header to each request
 func middlewareAppVersion() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header(api.HeaderAppVersion, app.Version)
+		c.Header(api.HeaderAppVersion, meta.Version)
 		c.Next()
 	}
 }

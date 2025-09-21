@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
 	"git.myservermanager.com/varakh/ecolinker/internal/float"
 	jsoninternal "git.myservermanager.com/varakh/ecolinker/internal/json"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/dto"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
@@ -260,7 +260,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 		if dataBytes, err = json.Marshal(data); err != nil {
 			log.Error().Msgf("Could not parse device parameters for collector '%s'", c.ID)
 		} else {
-			forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(app.Name), c.DeviceSN, strings.ToLower(c.Kind))
+			forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(meta.Name), c.DeviceSN, strings.ToLower(c.Kind))
 			if err = s.mqttForwardService.Publish(forwardTopic, 0, true, dataBytes); err != nil {
 				log.Warn().Msgf("Unable to forward collector '%s' device parameters: %v", c.ID, err)
 			}
@@ -279,7 +279,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 				continue
 			}
 
-			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(app.Name), valueMap.Key)
+			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
 			metricLabelKeys := []string{"device"}
 			metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)

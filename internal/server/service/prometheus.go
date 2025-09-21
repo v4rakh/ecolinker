@@ -22,7 +22,7 @@ type customCounters struct {
 }
 
 var (
-	ErrPrometheusMetricAlreadyRegistered = service_error.NewServiceError(service_error.ErrCodeConflict, errors.New("a metrics already exists"))
+	ErrPrometheusMetricAlreadyRegistered = service_error.NewServiceError(service_error.ErrCodeConflict, errors.New("metric already exists"))
 )
 
 type PrometheusService struct {

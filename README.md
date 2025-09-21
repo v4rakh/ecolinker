@@ -414,7 +414,7 @@ server {
 
     # forward matching requests to the main ecolinker application
     # make sure that SERVER_BASE_PATH is the same as the path inside the location (except for trailing slash)
-    location /ecolinker-app {
+    location /ecolinker-meta {
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

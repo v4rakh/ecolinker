@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -37,7 +37,7 @@ func (s *MqttForwardService) Init() error {
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("%s://%s:%d", s.config.Protocol, s.config.Host, s.config.Port))
-	opts.SetClientID(fmt.Sprintf("%s_%s", strings.ToUpper(app.Name), uuid.New()))
+	opts.SetClientID(fmt.Sprintf("%s_%s", strings.ToUpper(meta.Name), uuid.New()))
 
 	if s.config.Username != "" && s.config.Password != "" {
 		opts.SetUsername(s.config.Username)

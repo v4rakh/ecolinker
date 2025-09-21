@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server"
 	"git.myservermanager.com/varakh/ecolinker/internal/terminal"
 	"github.com/urfave/cli/v3"
@@ -16,15 +16,15 @@ func main() {
 	}
 
 	application := &cli.Command{
-		Name:                  app.Name,
+		Name:                  meta.Name,
 		Usage:                 "command-line interface for EcoLinker",
-		Version:               app.Version,
+		Version:               meta.Version,
 		EnableShellCompletion: true,
 		Commands: []*cli.Command{
 			{
 				Name: "server",
 				Commands: []*cli.Command{
-					server.ServeCmd,
+					serveCmd,
 				},
 			},
 			{
@@ -67,4 +67,14 @@ func main() {
 	if err := application.Run(context.Background(), os.Args); err != nil {
 		golog.Fatal(err)
 	}
+}
+
+var serveCmd = &cli.Command{
+	Name:  "serve",
+	Usage: "Starts the server and keeps it running",
+	Action: func(ctx context.Context, _ *cli.Command) error {
+		server := server.New(&ctx)
+		server.Start()
+		return nil
+	},
 }

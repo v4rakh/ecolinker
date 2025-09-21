@@ -16,14 +16,6 @@ func TestExtractValuesFromString(t *testing.T) {
 	a.Contains(valuesString, "val2")
 }
 
-func TestContains(t *testing.T) {
-	a := assert.New(t)
-	a.True(Contains([]string{""}, ""))
-	a.True(Contains([]string{"test", "abc"}, "test"))
-	a.False(Contains([]string{"abc"}, "test"))
-	a.False(Contains([]string{""}, "test"))
-}
-
 func TestAllContained(t *testing.T) {
 	a := assert.New(t)
 	a.True(AllContained([]string{"a", "b"}, []string{"a", "b", "c"}))
@@ -33,16 +25,6 @@ func TestAllContained(t *testing.T) {
 	a.True(AllContained([]string{}, []string{"a"}))
 	a.True(AllContained([]string{}, []string{}))
 	a.False(AllContained([]string{"a"}, []string{}))
-}
-
-func TestEqualsIgnoreOrder(t *testing.T) {
-	a := assert.New(t)
-	a.True(EqualsIgnoreOrder([]string{"c", "a", "b", "a"}, []string{"a", "a", "b", "c"}))
-	a.False(EqualsIgnoreOrder([]string{"c", "a", "z", "a"}, []string{"a", "a", "b", "c"}))
-	a.False(EqualsIgnoreOrder([]string{"c", "a", "z", "a"}, []string{"a", "a", "b", "c"}))
-	a.True(EqualsIgnoreOrder([]string{}, []string{}))
-	a.False(EqualsIgnoreOrder([]string{"a"}, []string{}))
-	a.False(EqualsIgnoreOrder([]string{}, []string{"a"}))
 }
 
 func TestFindInSlice(t *testing.T) {

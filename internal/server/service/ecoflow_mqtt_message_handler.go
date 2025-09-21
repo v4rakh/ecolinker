@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
 	"git.myservermanager.com/varakh/ecolinker/internal/float"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/go-ecoflow"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -90,7 +90,7 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 		}
 	}
 
-	forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(app.Name), h.DeviceSN, strings.ToLower(h.TopicKind.String()))
+	forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(meta.Name), h.DeviceSN, strings.ToLower(h.TopicKind.String()))
 	if err = h.mqttForwardService.Publish(forwardTopic, message.Qos(), message.Retained(), message.Payload()); err != nil {
 		log.Warn().Msgf("Unable to forward message: %v", err)
 	}
@@ -130,7 +130,7 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 			continue
 		}
 
-		metricKey := fmt.Sprintf("%s_%s", strings.ToLower(app.Name), valueMap.Key)
+		metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
 		metricLabelKeys := []string{"device"}
 		metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)

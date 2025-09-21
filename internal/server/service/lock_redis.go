@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
 	"github.com/go-redsync/redsync/v4"
@@ -27,7 +27,7 @@ func NewLockRedisService(lc *config.Lock) (LockService, error) {
 
 	var err error
 	var c *redis.Client
-	if c, err = config.NewRedisClient(fmt.Sprintf("%s-lock", app.Name), lc.RedisUrl); err != nil {
+	if c, err = config.NewRedisClient(fmt.Sprintf("%s-lock", meta.Name), lc.RedisUrl); err != nil {
 		return nil, fmt.Errorf("lock service: cannot initialize REDIS client: %w", err)
 	}
 

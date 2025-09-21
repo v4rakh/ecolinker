@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/api"
-	"git.myservermanager.com/varakh/ecolinker/internal/app"
+	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/BurntSushi/toml"
@@ -1133,7 +1133,7 @@ func loadConfigFromToml(cmd *cli.Command) error {
 	path := cmd.String(flagConfig)
 
 	if path == "" {
-		if foundPath, err := xdg.SearchConfigFile(fmt.Sprintf("%s.toml", app.Name)); err == nil {
+		if foundPath, err := xdg.SearchConfigFile(fmt.Sprintf("%s.toml", meta.Name)); err == nil {
 			path = foundPath
 		} else {
 			return nil
@@ -1212,7 +1212,7 @@ func failIfFlagsNotPresent(cmd *cli.Command, flagKeys []string) error {
 
 func newClient(cmd *cli.Command) *resty.Client {
 	client := resty.New()
-	client.SetHeader("User-Agent", fmt.Sprintf("%s/%s", app.Name, app.Version))
+	client.SetHeader("User-Agent", fmt.Sprintf("%s/%s", meta.Name, meta.Version))
 	client.SetDisableWarn(true)
 	client.SetTimeout(cmd.Duration(flagTimeout))
 	client.SetBaseURL(cmd.String(flagUrl))
