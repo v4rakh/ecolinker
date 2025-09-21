@@ -62,27 +62,20 @@ func NewPrometheusService(e *gin.Engine, c *config.Prometheus) *PrometheusServic
 		)
 	}
 
-	return &PrometheusService{
+	s := &PrometheusService{
 		prometheus:       p,
 		prometheusConfig: c,
-	}
-}
-
-// GetProm returns the to be instrumented prometheus registry for gin
-func (s *PrometheusService) GetProm() *ginprom.Prometheus {
-	return s.prometheus
-}
-
-// Init initializes the service, should be called directly after NewPrometheusService
-func (s *PrometheusService) Init() error {
-	if !s.prometheusConfig.Enabled {
-		return nil
 	}
 
 	s.customGauges.values = make(map[string][]string)
 	s.customCounters.values = make(map[string][]string)
 
-	return nil
+	return s
+}
+
+// GetProm returns the to be instrumented prometheus registry for gin
+func (s *PrometheusService) GetProm() *ginprom.Prometheus {
+	return s.prometheus
 }
 
 // RegisterGaugeNoLabels registers a metric

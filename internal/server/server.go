@@ -99,9 +99,6 @@ func (s *Server) Start() {
 		log.Info().Msgf("Starting embedded Prometheus server")
 	}
 	if cfg.Prometheus.Enabled {
-		if err = prometheusService.Init(); err != nil {
-			log.Fatal().Msgf("Prometheus service initialization failed: %v", err)
-		}
 		// always instrument tracking for the meta router
 		appRouter.Use(prometheusService.GetProm().Instrument())
 	}
