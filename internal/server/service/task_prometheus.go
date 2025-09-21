@@ -40,6 +40,19 @@ func (s *PrometheusTask) configurePrometheusRefreshTask() error {
 		return nil
 	}
 
+	if err := s.prometheusService.RegisterGaugeNoLabels(constant.MetricEcoFlowMqttEnabled, constant.MetricEcoFlowMqttEnabledHelp); err != nil {
+		return err
+	}
+	if err := s.prometheusService.RegisterGaugeNoLabels(constant.MetricEcoFlowMqttConnected, constant.MetricEcoFlowMqttConnectedHelp); err != nil {
+		return err
+	}
+	if err := s.prometheusService.RegisterGaugeNoLabels(constant.MetricMqttForwardEnabled, constant.MetricMqttForwardEnabledHelp); err != nil {
+		return err
+	}
+	if err := s.prometheusService.RegisterGaugeNoLabels(constant.MetricMqttForwardConnected, constant.MetricMqttForwardConnectedHelp); err != nil {
+		return err
+	}
+
 	runnable := func() {
 		enabledEcoFlow, connectedEcoFlow := s.ecoFlowMqttService.Status()
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricEcoFlowMqttEnabled, float.BoolToFloat(enabledEcoFlow)); err != nil {

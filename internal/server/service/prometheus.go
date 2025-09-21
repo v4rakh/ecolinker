@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/Depado/ginprom"
@@ -74,7 +73,7 @@ func (s *PrometheusService) GetProm() *ginprom.Prometheus {
 	return s.prometheus
 }
 
-// Init initializes the service, bootstrapping necessary metrics, should be called directly after NewPrometheusService
+// Init initializes the service, should be called directly after NewPrometheusService
 func (s *PrometheusService) Init() error {
 	if !s.prometheusConfig.Enabled {
 		return nil
@@ -82,19 +81,6 @@ func (s *PrometheusService) Init() error {
 
 	s.customGauges.values = make(map[string][]string)
 	s.customCounters.values = make(map[string][]string)
-
-	if err := s.RegisterGaugeNoLabels(constant.MetricEcoFlowMqttEnabled, constant.MetricEcoFlowMqttEnabledHelp); err != nil {
-		return err
-	}
-	if err := s.RegisterGaugeNoLabels(constant.MetricEcoFlowMqttConnected, constant.MetricEcoFlowMqttConnectedHelp); err != nil {
-		return err
-	}
-	if err := s.RegisterGaugeNoLabels(constant.MetricMqttForwardEnabled, constant.MetricMqttForwardEnabledHelp); err != nil {
-		return err
-	}
-	if err := s.RegisterGaugeNoLabels(constant.MetricMqttForwardConnected, constant.MetricMqttForwardConnectedHelp); err != nil {
-		return err
-	}
 
 	return nil
 }
