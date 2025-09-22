@@ -24,7 +24,7 @@
             src = ./.;
             tags = [ "prod" ];
             env.CGO_ENABLED = 0;
-            vendorHash = "sha256-w9qQE+4Tl4E5nCwYgzgwcAWcRbdjjMa6V9fMK3VeUEk=";
+            vendorHash = "sha256-OpnoqtIRyrlq8RTemonJLESHWnBz2pdEaeS86+qtr7s=";
           };
         };
         devShells.default =

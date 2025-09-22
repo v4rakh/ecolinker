@@ -733,7 +733,7 @@ manager [nix](https://nixos.org/), you can achieve a full and easy setup when yo
 
 This project can optionally use [direnv](https://github.com/direnv/direnv) (
 or [nix-direnv](https://github.com/nix-community/nix-direnv) with `nix`) to automatically load environment variables
-from an `.env` file. Copy `.env.example` to `.env` and adjust the values accordingly.
+from an `.env` file. Copy `.env.development` to `.env` and adjust the values accordingly.
 
 When you change directory into the project, the environment variables are automatically loaded after you've allowed
 `direnv` with `direnv allow`.
@@ -751,17 +751,8 @@ directory (or open an IDE terminal) within this project (similar to `direnv` its
 
 ### Setup
 
-Ensure to set the following environment variables for proper debug logs during development
-
-```shell
-DEVELOPMENT=true
-LOGGING_LEVEL=debug
-LOGGING_LEVEL_REQUESTS=debug
-LOGGING_ENCODING_COLORIZE=true
-```
-
-1. Run `make clean dependencies` to fetch dependencies
-2. Start `git.myservermanager.com/varakh/ecolinker/cmd/main.go`
+1. Copy `.env.development` to `.env`.
+2. Start with `make run`
 
 ### Guidelines
 
@@ -831,7 +822,7 @@ thus your code cannot be merged.
 
 * Name your branch `release/v...`
 * Your commit message should be `release: prepare v...`
-* Adapt `AppVersion` in `var.go` to `...` (without the `v`!)
+* Adapt `Version` in `internal/meta/pkg.go` to `...` (without the `v`!)
 * Adapt `version` in `flake.nix` to `...` (without the `v`!)
     * Do final sanity checking
         * Invoke `nix flake update`
@@ -857,7 +848,7 @@ Optionally (though heavily recommended), prepare another commit on branch `main`
 
 * Name your branch `release/prepare-next`
 * Your commit message should be `release: prepare next cycle after v...`
-* Adapt `AppVersion` in `var.go` to the next semantic patch version (without the `v`!)
+* Adapt `Version` in `internal/meta/pkg.go` to the next semantic patch version (without the `v`!)
 * Adapt `version` in `flake.nix` to the next semantic patch version (without the `v`!)
 
 ### Dependency updates
