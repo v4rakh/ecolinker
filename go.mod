@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	git.myservermanager.com/varakh/go-ecoflow v1.1.2
 	github.com/BurntSushi/toml v1.5.0
-	github.com/Depado/ginprom v1.8.1
+	github.com/Depado/ginprom v1.8.2
 	github.com/adrg/xdg v0.5.3
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/gin-contrib/cors v1.7.6
