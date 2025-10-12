@@ -14,22 +14,21 @@
     "main"
   ],
   "extends": [
-    "config:recommended",
-    ":rebaseStalePrs",
     ":ignoreUnstable",
+    ":rebaseStalePrs",
+    "config:recommended",
     "group:monorepos",
     "group:recommended",
-    "packages:eslint",
-    "packages:stylelint",
-    "packages:tslint",
-    "schedule:weekends",
-    "schedule:automergeWeekends",
     "local>msm/renovate-presets//presets/docker-ignore.json",
     "local>msm/renovate-presets//presets/github-actions-ignore.json",
     "local>msm/renovate-presets//presets/go-ignore-manager.json",
     "local>msm/renovate-presets//presets/go-major.json",
     "local>msm/renovate-presets//presets/go-minor-automerge.json",
-    "local>msm/renovate-presets//presets/go-patch-automerge.json"
+    "local>msm/renovate-presets//presets/go-patch-automerge.json",
+    "packages:eslint",
+    "packages:stylelint",
+    "packages:tslint",
+    "schedule:nonOfficeHours"
   ],
   "postUpdateOptions": [
     "gomodTidy",
