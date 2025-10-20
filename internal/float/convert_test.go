@@ -28,4 +28,12 @@ func TestConvertFloat(t *testing.T) {
 	res, ok = ToFloat(-42)
 	a.True(ok)
 	a.Equal(-42.0, res)
+
+	res, ok = ToFloat(false)
+	a.True(ok)
+	a.Equal(0.0, res)
+
+	res, ok = ToFloat(true)
+	a.True(ok)
+	a.Equal(1.0, res)
 }

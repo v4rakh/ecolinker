@@ -21,6 +21,8 @@ func ToFloat(val interface{}) (float64, bool) {
 		return float64(v), true
 	case uint64:
 		return float64(v), true
+	case bool:
+		return BoolToFloat(v), true
 	case string:
 		f, err := strconv.ParseFloat(v, 64)
 		if err == nil {
