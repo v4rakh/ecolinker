@@ -126,7 +126,7 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 		metricValue, ok := float.ToFloat(valueMap.Value)
 
 		if !ok {
-			log.Warn().Msgf("Unable to cast value to prometheus metric type: %v", metricValue)
+			log.Warn().Msgf("Unable to cast value to prometheus metric value: %v [tried to cast %+v]", metricValue, valueMap.Value)
 			continue
 		}
 
