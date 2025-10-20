@@ -33,17 +33,17 @@ type ModifyMqttSubscriptionRequest struct {
 }
 
 type CreateCollectorRequest struct {
-	DeviceSN   string   `json:"deviceSN" binding:"required,min=1"`
-	Kind       string   `json:"kind" binding:"required,oneof=device_parameters"`
-	Frequency  string   `json:"frequency" binding:"required"`
-	Parameters []string `json:"parameters"`
+	DeviceSN  string                 `json:"deviceSN" binding:"required,min=1"`
+	Kind      string                 `json:"kind" binding:"required,oneof=device_parameters device_historical_data"`
+	Frequency string                 `json:"frequency" binding:"required"`
+	Payload   map[string]interface{} `json:"payload"`
 }
 
 type ModifyCollectorRequest struct {
-	DeviceSN   string   `json:"deviceSN" binding:"required,min=1"`
-	Kind       string   `json:"kind" binding:"required,oneof=device_parameters"`
-	Frequency  string   `json:"frequency" binding:"required"`
-	Parameters []string `json:"parameters"`
+	DeviceSN  string                 `json:"deviceSN" binding:"required,min=1"`
+	Kind      string                 `json:"kind" binding:"required,oneof=device_parameters device_historical_data"`
+	Frequency string                 `json:"frequency" binding:"required"`
+	Payload   map[string]interface{} `json:"payload"`
 }
 
 // uri parameters

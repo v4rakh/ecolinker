@@ -13,12 +13,15 @@ import (
 const (
 	// CollectorKindDeviceParameters is a CollectorKind of type device_parameters.
 	CollectorKindDeviceParameters CollectorKind = "device_parameters"
+	// CollectorKindDeviceHistoricalData is a CollectorKind of type device_historical_data.
+	CollectorKindDeviceHistoricalData CollectorKind = "device_historical_data"
 )
 
 var ErrInvalidCollectorKind = fmt.Errorf("not a valid CollectorKind, try [%s]", strings.Join(_CollectorKindNames, ", "))
 
 var _CollectorKindNames = []string{
 	string(CollectorKindDeviceParameters),
+	string(CollectorKindDeviceHistoricalData),
 }
 
 // CollectorKindNames returns a list of possible string values of CollectorKind.
@@ -32,6 +35,7 @@ func CollectorKindNames() []string {
 func CollectorKindValues() []CollectorKind {
 	return []CollectorKind{
 		CollectorKindDeviceParameters,
+		CollectorKindDeviceHistoricalData,
 	}
 }
 
@@ -48,7 +52,8 @@ func (x CollectorKind) IsValid() bool {
 }
 
 var _CollectorKindValue = map[string]CollectorKind{
-	"device_parameters": CollectorKindDeviceParameters,
+	"device_parameters":      CollectorKindDeviceParameters,
+	"device_historical_data": CollectorKindDeviceHistoricalData,
 }
 
 // ParseCollectorKind attempts to convert a string to a CollectorKind.
@@ -538,6 +543,92 @@ func (x *DeviceKind) UnmarshalText(text []byte) error {
 //
 // Implementations must not retain b, nor mutate any bytes within b[:len(b)].
 func (x *DeviceKind) AppendText(b []byte) ([]byte, error) {
+	return append(b, x.String()...), nil
+}
+
+const (
+	// HistoricalDataStepDaily is a HistoricalDataStep of type daily.
+	HistoricalDataStepDaily HistoricalDataStep = "daily"
+	// HistoricalDataStepWeekly is a HistoricalDataStep of type weekly.
+	HistoricalDataStepWeekly HistoricalDataStep = "weekly"
+)
+
+var ErrInvalidHistoricalDataStep = fmt.Errorf("not a valid HistoricalDataStep, try [%s]", strings.Join(_HistoricalDataStepNames, ", "))
+
+var _HistoricalDataStepNames = []string{
+	string(HistoricalDataStepDaily),
+	string(HistoricalDataStepWeekly),
+}
+
+// HistoricalDataStepNames returns a list of possible string values of HistoricalDataStep.
+func HistoricalDataStepNames() []string {
+	tmp := make([]string, len(_HistoricalDataStepNames))
+	copy(tmp, _HistoricalDataStepNames)
+	return tmp
+}
+
+// HistoricalDataStepValues returns a list of the values for HistoricalDataStep
+func HistoricalDataStepValues() []HistoricalDataStep {
+	return []HistoricalDataStep{
+		HistoricalDataStepDaily,
+		HistoricalDataStepWeekly,
+	}
+}
+
+// String implements the Stringer interface.
+func (x HistoricalDataStep) String() string {
+	return string(x)
+}
+
+// IsValid provides a quick way to determine if the typed value is
+// part of the allowed enumerated values
+func (x HistoricalDataStep) IsValid() bool {
+	_, err := ParseHistoricalDataStep(string(x))
+	return err == nil
+}
+
+var _HistoricalDataStepValue = map[string]HistoricalDataStep{
+	"daily":  HistoricalDataStepDaily,
+	"weekly": HistoricalDataStepWeekly,
+}
+
+// ParseHistoricalDataStep attempts to convert a string to a HistoricalDataStep.
+func ParseHistoricalDataStep(name string) (HistoricalDataStep, error) {
+	if x, ok := _HistoricalDataStepValue[name]; ok {
+		return x, nil
+	}
+	return HistoricalDataStep(""), fmt.Errorf("%s is %w", name, ErrInvalidHistoricalDataStep)
+}
+
+// MustParseHistoricalDataStep converts a string to a HistoricalDataStep, and panics if is not valid.
+func MustParseHistoricalDataStep(name string) HistoricalDataStep {
+	val, err := ParseHistoricalDataStep(name)
+	if err != nil {
+		panic(err)
+	}
+	return val
+}
+
+// MarshalText implements the text marshaller method.
+func (x HistoricalDataStep) MarshalText() ([]byte, error) {
+	return []byte(string(x)), nil
+}
+
+// UnmarshalText implements the text unmarshaller method.
+func (x *HistoricalDataStep) UnmarshalText(text []byte) error {
+	tmp, err := ParseHistoricalDataStep(string(text))
+	if err != nil {
+		return err
+	}
+	*x = tmp
+	return nil
+}
+
+// AppendText appends the textual representation of itself to the end of b
+// (allocating a larger slice if necessary) and returns the updated slice.
+//
+// Implementations must not retain b, nor mutate any bytes within b[:len(b)].
+func (x *HistoricalDataStep) AppendText(b []byte) ([]byte, error) {
 	return append(b, x.String()...), nil
 }
 

@@ -9,7 +9,6 @@ import (
 var (
 	ErrValidationNotEmpty           = NewServiceError(ErrCodeIllegalArgument, errors.New("assert: empty values are not allowed"))
 	ErrValidationNotBlank           = NewServiceError(ErrCodeIllegalArgument, errors.New("assert: blank values are not allowed"))
-	ErrValidationUUID               = NewServiceError(ErrCodeIllegalArgument, errors.New("assert: not a valid uuid"))
 	ErrValidationTimeFormatDateTime = NewServiceError(ErrCodeIllegalArgument, errors.New(fmt.Sprintf("assert: not a valid time, expecting format '%s'", time.DateTime)))
 	ErrResourceNotFound             = NewServiceError(ErrCodeNotFound, errors.New("resource not found"))
 	ErrResourceConflict             = NewServiceError(ErrCodeConflict, errors.New("resource already exists"))

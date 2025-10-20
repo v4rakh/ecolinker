@@ -32,7 +32,9 @@ type CollectorService struct {
 }
 
 const (
-	jobTagCollectors = "COLLECTORS"
+	jobTagCollectors     = "COLLECTORS"
+	stepPayloadKey       = "step"
+	parametersPayloadKey = "parameters"
 )
 
 func NewCollectorService(e *EcoFlowHttpService, m *MqttForwardService, t *TaskService, p *PrometheusService, r repository.CollectorRepository) *CollectorService {
@@ -89,7 +91,7 @@ func (s *CollectorService) GetById(id string) (*model.Collector, error) {
 }
 
 // Create creates a new collector
-func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, frequency string, parameters []string) (*model.Collector, error) {
+func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, frequency string, payload map[string]interface{}) (*model.Collector, error) {
 	if kind == "" || deviceSN == "" || frequency == "" {
 		return nil, service_error.ErrValidationNotBlank
 	}
@@ -103,10 +105,23 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 	var p interface{}
 	switch kind {
 	case constant.CollectorKindDeviceParameters:
+		parameters, ok := payload[parametersPayloadKey].([]string)
+		if !ok {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey])))
+		}
 		if parameters == nil {
 			return nil, service_error.ErrValidationNotEmpty
 		}
 		p = dto.CollectorEcoFlowHttpDeviceParameterPayload{Parameters: parameters}
+	case constant.CollectorKindDeviceHistoricalData:
+		rangePayload, ok := payload[stepPayloadKey].(string)
+		if !ok {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'range' is required for collector type '%s', got %T", constant.CollectorKindDeviceHistoricalData, payload[stepPayloadKey])))
+		}
+		if _, parseErr := constant.ParseHistoricalDataStep(rangePayload); parseErr != nil {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'range' has wrong type: '%w'", parseErr))
+		}
+		p = dto.CollectorEcoFlowHttpDeviceHistoricalDataPayload{Step: constant.MustParseHistoricalDataStep(rangePayload).String()}
 	default:
 		return nil, service_error.NewServiceError(service_error.ErrCodeGeneral, errors.New("invalid kind provided"))
 	}
@@ -126,7 +141,7 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 }
 
 // Update updates an existing collector
-func (s *CollectorService) Update(id string, deviceSN string, kind constant.CollectorKind, frequency string, parameters []string) (*model.Collector, error) {
+func (s *CollectorService) Update(id string, deviceSN string, kind constant.CollectorKind, frequency string, payload map[string]interface{}) (*model.Collector, error) {
 	if id == "" || kind == "" || deviceSN == "" || frequency == "" {
 		return nil, service_error.ErrValidationNotBlank
 	}
@@ -146,10 +161,23 @@ func (s *CollectorService) Update(id string, deviceSN string, kind constant.Coll
 	var p interface{}
 	switch kind {
 	case constant.CollectorKindDeviceParameters:
+		parameters, ok := payload[parametersPayloadKey].([]string)
+		if !ok {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey])))
+		}
 		if parameters == nil {
 			return nil, service_error.ErrValidationNotEmpty
 		}
 		p = dto.CollectorEcoFlowHttpDeviceParameterPayload{Parameters: parameters}
+	case constant.CollectorKindDeviceHistoricalData:
+		step, ok := payload[stepPayloadKey].(string)
+		if !ok {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'range' is required for collector type '%s', got %T", constant.CollectorKindDeviceHistoricalData, payload[stepPayloadKey])))
+		}
+		if _, parseErr := constant.ParseHistoricalDataStep(step); parseErr != nil {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'range' has wrong type: '%w'", parseErr))
+		}
+		p = dto.CollectorEcoFlowHttpDeviceHistoricalDataPayload{Step: constant.MustParseHistoricalDataStep(step).String()}
 	default:
 		return nil, service_error.NewServiceError(service_error.ErrCodeGeneral, errors.New("invalid kind provided"))
 	}
@@ -241,6 +269,81 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 	}
 
 	switch c.Kind {
+	case constant.CollectorKindDeviceHistoricalData.String():
+		var p dto.CollectorEcoFlowHttpDeviceHistoricalDataPayload
+		if p, err = jsoninternal.UnmarshalGenericJSON[dto.CollectorEcoFlowHttpDeviceHistoricalDataPayload](pb); err != nil {
+			log.Error().Msgf("Could not unmarshal collector payload '%s'", c.ID)
+			return
+		}
+
+		var beginTime, endTime time.Time
+		now := time.Now()
+
+		step := constant.MustParseHistoricalDataStep(p.Step)
+		switch step {
+		case constant.HistoricalDataStepDaily:
+			yesterday := now.AddDate(0, 0, -1)
+			beginTime = time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, now.Location())
+			endTime = time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 23, 59, 59, 0, now.Location())
+		case constant.HistoricalDataStepWeekly:
+			// treat Sunday as the 7th day
+			weekday := int(now.Weekday())
+			if weekday == 0 {
+				weekday = 7
+			}
+
+			startOfThisWeek := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, now.Location())
+			startOfLastWeek := startOfThisWeek.AddDate(0, 0, -7)
+			endOfLastWeek := startOfLastWeek.AddDate(0, 0, 6)
+			endOfLastWeek = time.Date(endOfLastWeek.Year(), endOfLastWeek.Month(), endOfLastWeek.Day(), 23, 59, 59, 0, now.Location())
+
+			beginTime = startOfLastWeek
+			endTime = endOfLastWeek
+		default:
+			log.Error().Msgf("Could not determine device historical data step for collector '%s'", c.ID)
+			return
+		}
+
+		var data dto.EcoFlowHistoryData
+		if data, err = s.ecoFlowHttpService.GetHistory(ctx, c.DeviceSN, beginTime, endTime); err != nil {
+			log.Error().Msgf("Could not get device historical data for collector '%s'", c.ID)
+			return
+		}
+
+		var dataBytes []byte
+		if dataBytes, err = json.Marshal(data); err != nil {
+			log.Error().Msgf("Could not parse device historical data for collector '%s'", c.ID)
+		} else {
+			forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(meta.Name), c.DeviceSN, strings.ToLower(c.Kind))
+			if err = s.mqttForwardService.Publish(forwardTopic, 0, true, dataBytes); err != nil {
+				log.Warn().Msgf("Unable to forward collector '%s' device historical data: %v", c.ID, err)
+			}
+		}
+
+		for _, d := range data {
+			if d.IndexValue == nil {
+				log.Debug().Msgf("Cannot expose nil value to prometheus metric value: %v ", d.IndexName)
+				continue
+			}
+
+			metricValue := *d.IndexValue
+
+			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), "historical_data")
+
+			metricLabelKeys := []string{"collector", "device", "attribute", "unit", "start", "end"}
+			metricLabelValues := []string{c.ID.String(), c.DeviceSN, d.IndexName, d.Unit, beginTime.Format(time.DateTime), endTime.Format(time.DateTime)}
+
+			if promErr := s.prometheusService.RegisterGauge(metricKey, metricHelp, metricLabelKeys); promErr != nil {
+				if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
+					log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", metricLabelKeys, promErr)
+					continue
+				}
+			}
+			if promErr := s.prometheusService.SetGauge(metricKey, metricLabelValues, metricValue); promErr != nil {
+				log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", metricLabelKeys, promErr)
+				continue
+			}
+		}
 	case constant.CollectorKindDeviceParameters.String():
 		var p dto.CollectorEcoFlowHttpDeviceParameterPayload
 		if p, err = jsoninternal.UnmarshalGenericJSON[dto.CollectorEcoFlowHttpDeviceParameterPayload](pb); err != nil {
@@ -253,8 +356,6 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 			log.Error().Msgf("Could not get device parameters for collector '%s'", c.ID)
 			return
 		}
-
-		log.Debug().Msgf("Collector's '%s' result: %+v", c.ID, data)
 
 		var dataBytes []byte
 		if dataBytes, err = json.Marshal(data); err != nil {
@@ -275,15 +376,15 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 			metricValue, ok := float.ToFloat(valueMap.Value)
 
 			if !ok {
-				log.Warn().Msgf("Unable to cast value to prometheus metric type: %v", metricValue)
+				log.Debug().Msgf("Unable to cast value to prometheus metric value: %v [tried to cast %+v]", metricValue, valueMap.Value)
 				continue
 			}
 
 			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
-			metricLabelKeys := []string{"device"}
+			metricLabelKeys := []string{"collector", "device"}
 			metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)
-			metricLabelValues := []string{c.DeviceSN}
+			metricLabelValues := []string{c.ID.String(), c.DeviceSN}
 
 			indicesValues := slices.Collect(maps.Values(valueMap.Indices))
 			for _, v := range indicesValues {

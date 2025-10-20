@@ -2,17 +2,20 @@ package terminal
 
 import (
 	"context"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/api"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
+	"git.myservermanager.com/varakh/ecolinker/internal/tm"
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
 	"github.com/go-resty/resty/v2"
 	"github.com/urfave/cli/v3"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -25,22 +28,25 @@ const (
 	envUser     = "ECOLINKER_USER"
 	envPassword = "ECOLINKER_PASSWORD"
 
-	flagConfig  = "config"
-	flagUrl     = "url"
-	flagUser    = "user"
-	flagPass    = "pass"
-	flagRaw     = "raw"
-	flagTimeout = "timeout"
+	flagConfig       = "config"
+	flagUrl          = "url"
+	flagUser         = "user"
+	flagPass         = "pass"
+	flagPrintRaw     = "raw"
+	flagTimeout      = "timeout"
+	flagPrintCsv     = "csv"
+	flagPrintRowWise = "row-wise"
 
-	flagSerialNumber  = "serial-number"
-	flagLabel         = "label"
-	flagBeginTime     = "begin-time"
-	flagEndTime       = "end-time"
-	flagDeviceKind    = "device-kind"
-	flagTopicKind     = "topic-kind"
-	flagCollectorKind = "collector-kind"
-	flagFrequency     = "frequency"
-	flagParameters    = "parameter"
+	flagSerialNumber = "serial-number"
+	flagLabel        = "label"
+	flagBeginTime    = "begin-time"
+	flagEndTime      = "end-time"
+	flagDeviceKind   = "device-kind"
+	flagTopicKind    = "topic-kind"
+	flagFrequency    = "frequency"
+	flagParameters   = "parameter"
+	flagStep         = "step"
+	flagInterval     = "interval"
 
 	ecoFlowUrlPath           = "/api/v1/ecoflow"
 	devicesUrlPath           = "/api/v1/devices"
@@ -50,28 +56,34 @@ const (
 	errorParse = "error while parsing response: %v"
 	errorFlush = "error during while flushing response: %v"
 	errorCall  = "error during call: %w"
+
+	collectorAddRequestPayloadParameters = "parameters"
+	collectorAddRequestPayloadStep       = "step"
 )
 
 var (
-	configPath    string
-	instanceUrl   string
-	user          string
-	password      string
-	raw           bool
-	timeout       time.Duration
-	serialNumber  string
-	label         string
-	deviceKind    string
-	topicKind     string
-	collectorKind string
-	frequency     time.Duration
-	beginTime     string
-	endTime       string
-	parameters    []string
+	configPath                 string
+	instanceUrl                string
+	user                       string
+	password                   string
+	timeout                    time.Duration
+	printRaw                   bool
+	printCsv                   bool
+	printRowwise               bool
+	serialNumber               string
+	label                      string
+	deviceKind                 string
+	topicKind                  string
+	frequency                  time.Duration
+	beginTime                  string
+	endTime                    string
+	interval                   string
+	collectorPayloadParameters []string
+	collectorPayloadStep       string
 
 	configPathFlag = &cli.StringFlag{
 		Name:        flagConfig,
-		Usage:       "Path to EcoLinker's TOML configuration file",
+		Usage:       "EcoLinker's TOML configuration file path",
 		Required:    false,
 		Aliases:     []string{"c"},
 		Sources:     cli.EnvVars(envConfig),
@@ -101,16 +113,28 @@ var (
 		Sources:     cli.EnvVars(envPassword),
 		Destination: &password,
 	}
-	rawFlag = &cli.BoolFlag{
-		Name:        flagRaw,
-		Usage:       "Returns raw JSON data on success",
+	printRawFlag = &cli.BoolFlag{
+		Name:        flagPrintRaw,
+		Usage:       "Prints JSON",
 		Aliases:     []string{"r"},
 		Value:       false,
-		Destination: &raw,
+		Destination: &printRaw,
+	}
+	printCsvFlag = &cli.BoolFlag{
+		Name:        flagPrintCsv,
+		Usage:       "Prints CSV",
+		Value:       false,
+		Destination: &printCsv,
+	}
+	printRowFlag = &cli.BoolFlag{
+		Name:        flagPrintRowWise,
+		Usage:       "Prints data row-wise",
+		Value:       false,
+		Destination: &printRowwise,
 	}
 	timeoutFlag = &cli.DurationFlag{
 		Name:        flagTimeout,
-		Usage:       "Optional flag to determine maximum timeout to query EcoLinker",
+		Usage:       "Maximum timeout to query EcoLinker",
 		Aliases:     []string{"to"},
 		Required:    false,
 		Value:       10 * time.Second,
@@ -144,16 +168,9 @@ var (
 		Aliases:     []string{"tk"},
 		Destination: &topicKind,
 	}
-	collectorKindFlag = &cli.StringFlag{
-		Name:        flagCollectorKind,
-		Usage:       fmt.Sprintf("Collector kind, one of %v", constant.CollectorKindNames()),
-		Required:    true,
-		Aliases:     []string{"ck"},
-		Destination: &collectorKind,
-	}
 	frequencyFlag = &cli.DurationFlag{
 		Name:        flagFrequency,
-		Usage:       "Optional flag to determine how frequently the collector runs (if collector queries EcoFlow's HTTP API, ensure to pick a reasonable duration to not spam EcoFlow's services)",
+		Usage:       "Frequency for collector invocations (if collector queries EcoFlow's HTTP API, ensure to pick a reasonable duration to not spam EcoFlow's services). Pick the frequency according to the task being executed to deliver data.",
 		Aliases:     []string{"fq"},
 		Required:    false,
 		Value:       45 * time.Second,
@@ -161,21 +178,40 @@ var (
 	}
 	beginTimeFlag = &cli.StringFlag{
 		Name:        flagBeginTime,
-		Usage:       fmt.Sprintf("The begin time with layout '%s', total time span cannot exceed one week", time.DateTime),
+		Usage:       fmt.Sprintf("Begin time with layout '%s', total time span cannot exceed one week if interval is not provided", time.DateTime),
 		Aliases:     []string{"bt"},
 		Destination: &beginTime,
 	}
 	endTimeFlag = &cli.StringFlag{
 		Name:        flagEndTime,
-		Usage:       fmt.Sprintf("The end time with layout '%s', total time span cannot exceed one week", time.DateTime),
+		Usage:       fmt.Sprintf("End time with layout '%s', total time span cannot exceed one week if interval is not provided", time.DateTime),
 		Aliases:     []string{"et"},
 		Destination: &endTime,
 	}
 	parametersFlag = &cli.StringSliceFlag{
 		Name:        flagParameters,
-		Usage:       "Parameters to query, if none given, all will be queried, you can provide multiple --parameter or its aliases",
+		Usage:       "Parameters to query when collector runs, if none given, all will be queried, you can provide multiple --parameter or using its aliases",
 		Aliases:     []string{"pn", "par", "pp"},
-		Destination: &parameters,
+		Destination: &collectorPayloadParameters,
+	}
+	stepFlag = &cli.StringFlag{
+		Name:  flagStep,
+		Usage: fmt.Sprintf("Time range to query when collector runs which uses full PAST period (last week starting from Monday to Sunday or yesterday), one of: %s", strings.Join(constant.HistoricalDataStepNames(), " ")),
+		Validator: func(v string) error {
+			_, err := constant.ParseHistoricalDataStep(v)
+			return err
+		},
+		Destination: &collectorPayloadStep,
+	}
+	intervalFlag = &cli.StringFlag{
+		Name:     flagInterval,
+		Required: false,
+		Usage:    fmt.Sprintf("Splits begin to end time range into individual distinct sub time ranges with a given interval step size ('%s') between them (inclusive) which allows to collect daily or weekly aggregated data", strings.Join(constant.HistoricalDataStepNames(), " ")),
+		Validator: func(v string) error {
+			_, err := constant.ParseHistoricalDataStep(v)
+			return err
+		},
+		Destination: &interval,
 	}
 	EcoFlowDevicesListCmd = &cli.Command{
 		Name:  "ls",
@@ -185,8 +221,8 @@ var (
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			printRawFlag,
 		},
 		Action: ecoFlowDevicesList,
 	}
@@ -194,14 +230,14 @@ var (
 		Name:  "ps",
 		Usage: "Device's parameters queried from EcoFlow",
 		Flags: []cli.Flag{
-			snFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			parametersFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			parametersFlag,
+			printRawFlag,
 		},
 		Action: ecoFlowDeviceParameters,
 	}
@@ -210,13 +246,13 @@ var (
 		Usage:       "Device's batteries queried from EcoFlow",
 		Description: "Filters specific keys of all parameters for a device",
 		Flags: []cli.Flag{
-			snFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			printRawFlag,
 		},
 		Action: ecoFlowDeviceBatteries,
 	}
@@ -224,15 +260,17 @@ var (
 		Name:  "hs",
 		Usage: "Device's historical data queried from EcoFlow (PowerOcean only)",
 		Flags: []cli.Flag{
-			snFlag,
-			beginTimeFlag,
-			endTimeFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			beginTimeFlag,
+			endTimeFlag,
+			intervalFlag,
+			printCsvFlag,
+			printRowFlag,
 		},
 		Action: ecoFlowDeviceHistory,
 	}
@@ -240,13 +278,13 @@ var (
 		Name:  "status",
 		Usage: "EcoLinker's status regarding its connection to EcoFlow's MQTT broker",
 		Flags: []cli.Flag{
-			snFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			printRawFlag,
 		},
 		Action: ecoFlowBrokerStatus,
 	}
@@ -258,8 +296,8 @@ var (
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			printRawFlag,
 		},
 		Action: devicesList,
 	}
@@ -267,15 +305,15 @@ var (
 		Name:  "add",
 		Usage: "Adds a device which enables you to listen for MQTT messages from EcoFlow",
 		Flags: []cli.Flag{
-			snFlag,
-			labelFlag,
-			deviceKindFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			labelFlag,
+			deviceKindFlag,
+			printRawFlag,
 		},
 		Action: devicesAdd,
 	}
@@ -283,13 +321,13 @@ var (
 		Name:  "rm",
 		Usage: "Removes a device, remember that all associated MQTT subscriptions are deleted with it",
 		Flags: []cli.Flag{
-			snFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			printRawFlag,
 		},
 		Action: devicesRemove,
 	}
@@ -301,8 +339,8 @@ var (
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			printRawFlag,
 		},
 		Action: subsList,
 	}
@@ -310,14 +348,14 @@ var (
 		Name:  "add",
 		Usage: "Adds a subscription for a tracked device",
 		Flags: []cli.Flag{
-			snFlag,
-			topicKindFlag,
 			configPathFlag,
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			snFlag,
+			topicKindFlag,
+			printRawFlag,
 		},
 		Action: subsAdd,
 	}
@@ -329,8 +367,8 @@ var (
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			printRawFlag,
 		},
 		ArgsUsage: "<id>",
 		Action:    subsRemove,
@@ -343,27 +381,48 @@ var (
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			printRawFlag,
 		},
 		Action: collectorsList,
 	}
 	CollectorsAddCmd = &cli.Command{
 		Name:  "add",
 		Usage: "Adds a collector for a tracked device",
-		Flags: []cli.Flag{
-			snFlag,
-			collectorKindFlag,
-			frequencyFlag,
-			parametersFlag,
-			configPathFlag,
-			urlFlag,
-			userFlag,
-			passwordFlag,
-			rawFlag,
-			timeoutFlag,
+		Commands: []*cli.Command{
+			{
+				Name:  "device-parameters",
+				Usage: "Adds a collector for a tracked device to query parameters",
+				Flags: []cli.Flag{
+					configPathFlag,
+					urlFlag,
+					userFlag,
+					passwordFlag,
+					timeoutFlag,
+					snFlag,
+					frequencyFlag,
+					parametersFlag,
+					printRawFlag,
+				},
+				Action: collectorsAddDeviceParameters,
+			},
+			{
+				Name:  "device-historical-data",
+				Usage: "Adds a collector for a tracked device to query historical data (PowerOcean only)",
+				Flags: []cli.Flag{
+					configPathFlag,
+					urlFlag,
+					userFlag,
+					passwordFlag,
+					timeoutFlag,
+					snFlag,
+					frequencyFlag,
+					stepFlag,
+					printRawFlag,
+				},
+				Action: collectorsAddDeviceHistoricalData,
+			},
 		},
-		Action: collectorsAdd,
 	}
 	CollectorsRmCmd = &cli.Command{
 		Name:  "rm",
@@ -373,8 +432,8 @@ var (
 			urlFlag,
 			userFlag,
 			passwordFlag,
-			rawFlag,
 			timeoutFlag,
+			printRawFlag,
 		},
 		ArgsUsage: "<id>",
 		Action:    collectorsRemove,
@@ -408,7 +467,7 @@ func ecoFlowDevicesList(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -451,7 +510,7 @@ func ecoFlowDeviceParameters(ctx context.Context, cmd *cli.Command) error {
 	var res *resty.Response
 	if params != nil && len(params) > 0 {
 		payload := api.EcoFlowDeviceParametersRequest{
-			Parameters: parameters,
+			Parameters: collectorPayloadParameters,
 		}
 		res, err = client.R().
 			SetContext(ctx).
@@ -474,7 +533,7 @@ func ecoFlowDeviceParameters(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -524,7 +583,7 @@ func ecoFlowDeviceBatteries(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -558,11 +617,7 @@ func ecoFlowDeviceHistory(ctx context.Context, cmd *cli.Command) error {
 
 	sn := cmd.String(flagSerialNumber)
 	client := newClient(cmd)
-
 	url := fmt.Sprintf("%s/devices/%s/history", ecoFlowUrlPath, sn)
-
-	var successRes api.EcoFlowHistoryDataResponse
-	var errorRes api.ErrorResponse
 
 	argBeginTime := cmd.String(flagBeginTime)
 	argEndTime := cmd.String(flagEndTime)
@@ -576,41 +631,170 @@ func ecoFlowDeviceHistory(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("end time is not a valid time, expecting format '%s'", time.DateTime), 1)
 	}
 
-	res, err := client.R().
-		SetContext(ctx).
-		SetResult(&successRes).
-		SetError(&errorRes).
-		SetQueryParam("beginTime", beginTimeParsed.Format(time.DateTime)).
-		SetQueryParam("endTime", endTimeParsed.Format(time.DateTime)).
-		Get(url)
+	var timeRanges []tm.TimeRange
+	intervalStep := cmd.String(flagInterval)
+	if intervalStep != "" {
+		stepSize := constant.MustParseHistoricalDataStep(intervalStep)
+		skipInterval := time.Hour * 24
+		if constant.HistoricalDataStepWeekly == stepSize {
+			skipInterval = time.Hour * 24 * 7
+		}
 
-	if err != nil {
-		return cli.Exit(fmt.Errorf(errorCall, err), 1)
-	}
-	if !res.IsSuccess() {
-		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
-	}
-
-	if cmd.Bool(flagRaw) {
-		fmt.Println(string(res.Body()))
-		return nil
+		timeRanges, _ = tm.TimeRanges(beginTimeParsed, endTimeParsed, skipInterval, -1*time.Second, false)
+	} else {
+		timeRanges = append(timeRanges, tm.TimeRange{
+			Start: beginTimeParsed,
+			End:   endTimeParsed,
+		})
 	}
 
+	rowWise := cmd.Bool(flagPrintRowWise)
+	var header []string
+	var rows [][]string
+
+	for _, t := range timeRanges {
+		var successRes api.EcoFlowHistoryDataResponse
+		var errorRes api.ErrorResponse
+
+		res, reqErr := client.R().
+			SetContext(ctx).
+			SetResult(&successRes).
+			SetError(&errorRes).
+			SetQueryParam("beginTime", t.Start.Format(time.DateTime)).
+			SetQueryParam("endTime", t.End.Format(time.DateTime)).
+			Get(url)
+
+		if reqErr != nil {
+			return cli.Exit(fmt.Errorf(errorCall, err), 1)
+		}
+		if !res.IsSuccess() {
+			return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
+		}
+
+		header = getDeviceHistoryHeader(rowWise, successRes.Data)
+		for _, r := range getDeviceHistoryRows(rowWise, successRes.Data, t.Start, t.End) {
+			rows = append(rows, r)
+		}
+	}
+
+	if cmd.Bool(flagPrintCsv) {
+		return printDeviceHistoryCsv(header, rows)
+	}
+
+	return printDeviceHistoryTabular(header, rows)
+}
+
+func getDeviceHistoryHeader(rowWise bool, data []*api.EcoFlowHistoryItemResponse) []string {
+	if !rowWise {
+		return []string{"Start", "End", "Attribute", "Value", "Unit"}
+	}
+
+	header := make([]string, 0)
+	header = append(header, "Start")
+	header = append(header, "End")
+
+	sort.SliceStable(data, func(i, j int) bool {
+		return data[i].IndexName < data[j].IndexName
+	})
+
+	for _, v := range data {
+		header = append(header, fmt.Sprintf("%s Value", v.IndexName))
+		header = append(header, fmt.Sprintf("%s Unit", v.IndexName))
+	}
+
+	return header
+}
+
+func getDeviceHistoryRows(rowWise bool, data []*api.EcoFlowHistoryItemResponse, start time.Time, end time.Time) [][]string {
+	rows := make([][]string, 0)
+
+	if !rowWise {
+		for _, v := range data {
+			rows = append(rows, []string{start.Format(time.DateTime), end.Format(time.DateTime), v.IndexName, fmt.Sprintf("%v", *v.IndexValue), v.Unit})
+		}
+
+		return rows
+	}
+
+	row := make([]string, 0)
+	row = append(row, start.Format(time.DateTime))
+	row = append(row, end.Format(time.DateTime))
+
+	sort.SliceStable(data, func(i, j int) bool {
+		return data[i].IndexName < data[j].IndexName
+	})
+
+	for _, v := range data {
+		row = append(row, fmt.Sprintf("%v", *v.IndexValue))
+		row = append(row, v.Unit)
+	}
+
+	rows = append(rows, row)
+
+	return rows
+}
+
+func printDeviceHistoryCsv(header []string, rows [][]string) cli.ExitCoder {
+	var err error
+	w := csv.NewWriter(os.Stdout)
+
+	if err = w.Write(header); err != nil {
+		return cli.Exit(fmt.Sprintf(errorParse, err), 1)
+	}
+	for _, v := range rows {
+		if err = w.Write(v); err != nil {
+			return cli.Exit(fmt.Sprintf(errorParse, err), 1)
+		}
+	}
+
+	w.Flush()
+	if err = w.Error(); err != nil {
+		return cli.Exit(fmt.Sprintf(errorFlush, err), 1)
+	}
+
+	return nil
+}
+
+func printDeviceHistoryTabular(header []string, rows [][]string) cli.ExitCoder {
+	var err error
 	w := tabwriter.NewWriter(os.Stdout, 10, 1, 1, ' ', tabwriter.Debug)
-	if _, err = fmt.Fprintf(w, "%v\t %v\t %v\n", "Attribute", "Value", "Unit"); err != nil {
+
+	headerFormat, headerArgs := getTabularFormatAndArgs(header)
+	if _, err = fmt.Fprintf(w, headerFormat, headerArgs...); err != nil {
 		return cli.Exit(fmt.Sprintf(errorParse, err), 1)
 	}
 
-	for _, v := range successRes.Data {
-		if _, err = fmt.Fprintf(w, "%v\t %v\t %s\n", v.IndexName, *v.IndexValue, v.Unit); err != nil {
+	for _, row := range rows {
+		rowFormat, rowArgs := getTabularFormatAndArgs(row)
+		if _, err = fmt.Fprintf(w, rowFormat, rowArgs...); err != nil {
 			return cli.Exit(fmt.Sprintf(errorFlush, err), 1)
 		}
 	}
+
 	if err = w.Flush(); err != nil {
 		return cli.Exit(fmt.Sprintf(errorFlush, err), 1)
 	}
 
 	return nil
+}
+
+func getTabularFormatAndArgs(data []string) (string, []interface{}) {
+	format := ""
+	for i := range data {
+		if len(data)-1 == i {
+			format += "%v"
+		} else {
+			format += "%v\t"
+		}
+	}
+	format += "\n"
+
+	args := make([]interface{}, len(data))
+	for i, v := range data {
+		args[i] = v
+	}
+
+	return format, args
 }
 
 func ecoFlowBrokerStatus(ctx context.Context, cmd *cli.Command) error {
@@ -640,7 +824,7 @@ func ecoFlowBrokerStatus(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -688,7 +872,7 @@ func devicesList(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -763,7 +947,7 @@ func devicesAdd(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -838,7 +1022,7 @@ func subsList(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -907,7 +1091,7 @@ func subsAdd(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -983,7 +1167,7 @@ func collectorsList(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -1005,11 +1189,11 @@ func collectorsList(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-func collectorsAdd(ctx context.Context, cmd *cli.Command) error {
+func collectorsAddDeviceParameters(ctx context.Context, cmd *cli.Command) error {
 	if err := loadConfigFromToml(cmd); err != nil {
 		return cli.Exit(err, 1)
 	}
-	if err := failIfFlagsNotPresent(cmd, []string{flagUrl, flagSerialNumber, flagCollectorKind}); err != nil {
+	if err := failIfFlagsNotPresent(cmd, []string{flagUrl, flagSerialNumber}); err != nil {
 		return cli.Exit(err, 1)
 	}
 
@@ -1019,22 +1203,22 @@ func collectorsAdd(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(errors.New("device serial number cannot be blank or only be 255 characters long"), 1)
 	}
 
-	// validate collector kind
-	tk := cmd.String(flagCollectorKind)
-	if !str.FindInSlice(constant.CollectorKindNames(), tk) {
-		return cli.Exit(errors.New(fmt.Sprintf("collector kind must be one of %v", constant.CollectorKindNames())), 1)
-	}
-
 	fq := cmd.Duration(flagFrequency)
+	if fq == 0 {
+		return cli.Exit(errors.New("frequency must be set to a valid duration"), 1)
+	}
 
 	params := cmd.StringSlice(flagParameters)
 
 	// fully constructed payload
+	collectorPayload := make(map[string]interface{})
+	collectorPayload[collectorAddRequestPayloadParameters] = params
+
 	payload := api.CreateCollectorRequest{
-		DeviceSN:   deviceSN,
-		Kind:       tk,
-		Frequency:  fq.String(),
-		Parameters: params,
+		DeviceSN:  deviceSN,
+		Kind:      constant.CollectorKindDeviceParameters.String(),
+		Frequency: fq.String(),
+		Payload:   collectorPayload,
 	}
 
 	client := newClient(cmd)
@@ -1058,7 +1242,76 @@ func collectorsAdd(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
 	}
 
-	if cmd.Bool(flagRaw) {
+	if cmd.Bool(flagPrintRaw) {
+		fmt.Println(string(res.Body()))
+		return nil
+	}
+
+	fmt.Printf("ID\t%v\n", successRes.Data.ID)
+	fmt.Printf("Device SN\t%v\n", successRes.Data.DeviceSN)
+	fmt.Printf("Kind\t%v\n", successRes.Data.Kind)
+	fmt.Printf("Frequency\t%v\n", successRes.Data.Frequency)
+	fmt.Printf("Payload\t%v\n", successRes.Data.Payload)
+	fmt.Printf("Created\t%v\n", successRes.Data.CreatedAt)
+	fmt.Printf("Updated\t%v\n", successRes.Data.UpdatedAt)
+
+	return nil
+}
+
+func collectorsAddDeviceHistoricalData(ctx context.Context, cmd *cli.Command) error {
+	if err := loadConfigFromToml(cmd); err != nil {
+		return cli.Exit(err, 1)
+	}
+	if err := failIfFlagsNotPresent(cmd, []string{flagUrl, flagSerialNumber}); err != nil {
+		return cli.Exit(err, 1)
+	}
+
+	// validate device serial number
+	deviceSN := cmd.String(flagSerialNumber)
+	if deviceSN == "" || len(deviceSN) > 255 {
+		return cli.Exit(errors.New("device serial number cannot be blank or only be 255 characters long"), 1)
+	}
+
+	fq := cmd.Duration(flagFrequency)
+	if fq == 0 {
+		return cli.Exit(errors.New("frequency must be set to a valid duration"), 1)
+	}
+
+	step := cmd.String(flagStep)
+
+	// fully constructed payload
+	collectorPayload := make(map[string]interface{})
+	collectorPayload[collectorAddRequestPayloadStep] = step
+
+	payload := api.CreateCollectorRequest{
+		DeviceSN:  deviceSN,
+		Kind:      constant.CollectorKindDeviceHistoricalData.String(),
+		Frequency: fq.String(),
+		Payload:   collectorPayload,
+	}
+
+	client := newClient(cmd)
+
+	var successRes api.CollectorSingleResponse
+	var errorRes api.ErrorResponse
+	url := collectorsUrlPath
+
+	res, err := client.R().
+		SetContext(ctx).
+		SetHeader(api.HeaderContentType, api.HeaderContentTypeApplicationJson).
+		SetBody(&payload).
+		SetResult(&successRes).
+		SetError(&errorRes).
+		Post(url)
+
+	if err != nil {
+		return cli.Exit(fmt.Errorf(errorCall, err), 1)
+	}
+	if !res.IsSuccess() {
+		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
+	}
+
+	if cmd.Bool(flagPrintRaw) {
 		fmt.Println(string(res.Body()))
 		return nil
 	}
@@ -1157,9 +1410,9 @@ func loadConfigFromToml(cmd *cli.Command) error {
 		}
 	}
 
-	if !cmd.Bool(flagRaw) {
-		if err = cmd.Set(flagRaw, strconv.FormatBool(config.Parsing.Raw)); err != nil {
-			return fmt.Errorf("cannot set config value '%s' from config file '%s': %w", flagRaw, path, err)
+	if !cmd.Bool(flagPrintRaw) {
+		if err = cmd.Set(flagPrintRaw, strconv.FormatBool(config.Parsing.Raw)); err != nil {
+			return fmt.Errorf("cannot set config value '%s' from config file '%s': %w", flagPrintRaw, path, err)
 		}
 	}
 

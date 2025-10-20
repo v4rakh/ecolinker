@@ -18,3 +18,7 @@ type EcoFlowDeviceData = []EcoFlowDeviceItem
 type CollectorEcoFlowHttpDeviceParameterPayload struct {
 	Parameters []string `json:"parameters"`
 }
+
+type CollectorEcoFlowHttpDeviceHistoricalDataPayload struct {
+	Step string `json:"step"`
+}

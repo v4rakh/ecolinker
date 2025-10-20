@@ -20,8 +20,11 @@ type DeviceKind string
 // ENUM(quota, status)
 type TopicKind string
 
-// ENUM(device_parameters)
+// ENUM(device_parameters, device_historical_data)
 type CollectorKind string
+
+// ENUM(daily, weekly)
+type HistoricalDataStep string
 
 // FromVariadicToStr converts variadic notation to string array if type is of string
 func FromVariadicToStr[T ~string](s ...T) []string {

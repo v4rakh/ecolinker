@@ -45,7 +45,8 @@ MQTT topics from EcoFlow, you need to
 
 **You only need to do it once!** Tracked devices and subscriptions are persisted.
 
-EcoLinker's main interface to control it is a **command-line interface client** (as of now).
+EcoLinker's main interface to control it is a **[command-line interface client](#command-line-interface-client)** (as of
+now).
 
 ### Command-line interface client
 
@@ -84,7 +85,7 @@ Write the serial number down for the next step.
 Let's add a new tracked device as follows:
 
 ```shell
-$ ./ecolinker devices add --sn 7QX3V2A9KLM8J5WC --label "my test" --dk other
+$ ./ecolinker devices add --sn 7QX3V2A9KLM8J5WC --label "my test" --device-kind other
 
 SN      7QX3V2A9KLM8J5WC
 Kind    other
@@ -101,7 +102,7 @@ start to publish Prometheus metrics afterward.
 Let's add a subscription (sub) with the tracked device serial number.
 
 ```shell
-$ ./ecolinker subs add --sn 7QX3V2A9KLM8J5WC --tk quota
+$ ./ecolinker subs add --sn 7QX3V2A9KLM8J5WC --topic-kind quota
 
 ID      0b226b46-ce36-483d-a602-fcdaf18fd94b
 Device SN       7QX3V2A9KLM8J5WC
@@ -144,7 +145,7 @@ flag is optional. If parameters are omitted, all device's parameters are process
 ones which are missing from EcoFlow's MQTT payload.
 
 ```shell
-$ ./ecolinker collectors add --sn 7QX3V2A9KLM8J5WC --ck device_parameters --fq 2m --pp bpSoc --pp mmpptPwr --p sysGridPwr --pp sysLoadPwr --pp bpPwr
+$ ./ecolinker collectors add device-parameters --sn 7QX3V2A9KLM8J5WC --fq 2m --pp bpSoc --pp mmpptPwr --p sysGridPwr --pp sysLoadPwr --pp bpPwr
 ID      677cdb08-f20d-49dc-beac-54cd32d86735
 Device SN       7QX3V2A9KLM8J5WC
 Kind    device_parameters
@@ -153,6 +154,12 @@ Payload map[parameters:[bpSoc mmpptPwr sysLoadPwr bpPwr] sn:7QX3V2A9KLM8J5WC]
 Created 2025-06-14 08:45:22.737204 +0200 CEST
 Updated 2025-06-14 08:45:22.737204 +0200 CEST
 ```
+
+There are more collectors, look into the help for the `collectors add` command with:
+
+```shell
+$ ./ecolinker collectors add -h
+``` 
 
 #### Client configuration
 
@@ -222,23 +229,8 @@ sysLoadPwr | 479
 
 Avoiding all specific parameters queries _all_ parameter values from EcoFlow's API.
 
-Example for PowerOcean retrieving historical data from EcoFlow's API:
-
-```shell
-./ecolinker ecoflow hs --sn 7QX3V2A9KLM8J5WC --begin-time "2025-06-06 00:00:00" --end-time "2025-06-06 23:59:59"
-
-Attribute        | Value    | Unit
-From Solar       | 34.5     | kWh
-To Battery       | 9.22     | kWh
-From Battery     | 10.54    | kWh
-From Grid        | 0.08     | kWh
-To Grid          | 15.8     | kWh
-To Home          | 20.1     | kWh
-Self-sufficiency | 99.7     | %
-```
-
-EcoLinker supports more actions, like editing a tracked device's name etc. This is (as of now) not exposed in the
-command-line tool, but you can do it with `curl`.
+EcoLinker supports more actions and [device specifics](./_doc/README.md) functionality, like editing a tracked device's
+name etc. This is (as of now) not exposed in the command-line tool, but you can do it with `curl`.
 
 The command-line interface client supports autocompletion. There's a hidden command which can be used to generate the
 necessary autocompletion code for shells like `bash`, `zsh`, or alike with e.g. `./ecolinker completion zsh`. Afterward,
@@ -246,7 +238,7 @@ you need to place this into your shell's autocompletion source directory.
 
 ## Prerequisite
 
-This is required if you would like to use EcoLinker. EcoLinker **requires** an EcoFlow IoT Developer Platform account.
+For EcoLinker you **MUST** have an EcoFlow IoT Developer Platform account!
 
 1. Go to https://developer-eu.ecoflow.com/.
 2. Click on _"Become a Developer"_.
@@ -587,9 +579,9 @@ place. As this is heavily device and environment specific, there are two example
 
 Remember, available metrics depend on defined collectors, your device, and MQTT payload sent from EcoFlow itself.
 
-* Example for a PowerOcean (inverter) device, look into the [example_powerocean.json](./_doc/example_powerocean.json).
+* Example for a PowerOcean (inverter) device, look into the [PowerOcean](./_doc/powerocean/README.md).
   It uses MQTT and collectors and incorporates the performance metrics. There are also
-  some [screenshots](./_doc/example_powerocean.md).
+  some [screenshots](./_doc/powerocean/README.md).
 * Example for a basic Grafana dashboard visualizing EcoLinker's performance metrics only, look into
   the [go_ginprom](./_doc/go_ginprom.json) dashboard.
 
@@ -664,8 +656,8 @@ The following topics are used as forward topics:
 
 - `/ecolinker/<Device Serial Number>/quota` for quota messages from EcoFlow's MQTT broker
 - `/ecolinker/<Device Serial Number>/status` for status messages from EcoFlow's MQTT broker
-- `/ecolinker/<Device Serial Number>/device_parameters` for device parameters message produced by the _"
-  device_parameters"_ collector
+- `/ecolinker/<Device Serial Number>/device_parameters` for device parameters message produced by a collector
+- `/ecolinker/<Device Serial Number>/device_historical_data` for device historical message produced by a collector
 
 ## Configuration
 

@@ -63,7 +63,7 @@ func (h *CollectorHandler) Create(c *gin.Context) {
 	}
 
 	var e *model.Collector
-	if e, err = h.collectorService.Create(req.DeviceSN, constant.CollectorKind(req.Kind), req.Frequency, req.Parameters); err != nil {
+	if e, err = h.collectorService.Create(req.DeviceSN, constant.CollectorKind(req.Kind), req.Frequency, req.Payload); err != nil {
 		_ = c.AbortWithError(ToHttpStatus(err), err)
 		return
 	}
@@ -89,7 +89,7 @@ func (h *CollectorHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if e, err = h.collectorService.Update(pathParams.ID, req.DeviceSN, constant.CollectorKind(req.Kind), req.Frequency, req.Parameters); err != nil {
+	if e, err = h.collectorService.Update(pathParams.ID, req.DeviceSN, constant.CollectorKind(req.Kind), req.Frequency, req.Payload); err != nil {
 		_ = c.AbortWithError(ToHttpStatus(err), err)
 		return
 	}
