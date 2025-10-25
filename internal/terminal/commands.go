@@ -15,6 +15,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/urfave/cli/v3"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1371,6 +1372,9 @@ type configToml struct {
 		Password     string
 		PasswordFile string
 	}
+	Device struct {
+		SerialNumber string
+	}
 	Parsing struct {
 		Raw bool
 	}
@@ -1403,22 +1407,30 @@ func loadConfigFromToml(cmd *cli.Command) error {
 		return fmt.Errorf("cannot read config file '%s': %w", path, err)
 	}
 
+	flagNames := getAllFlagNames(cmd)
+
 	// for each configuration, prioritize externally provided settings
-	if cmd.String(flagUrl) == "" {
+	if slices.Contains(flagNames, flagUrl) && cmd.String(flagUrl) == "" {
 		if err = cmd.Set(flagUrl, config.Server.URL); err != nil {
 			return fmt.Errorf("cannot set config value '%s' from config file '%s': %w", flagUrl, path, err)
 		}
 	}
 
-	if !cmd.Bool(flagPrintRaw) {
+	if slices.Contains(flagNames, flagPrintRaw) && !cmd.Bool(flagPrintRaw) {
 		if err = cmd.Set(flagPrintRaw, strconv.FormatBool(config.Parsing.Raw)); err != nil {
 			return fmt.Errorf("cannot set config value '%s' from config file '%s': %w", flagPrintRaw, path, err)
 		}
 	}
 
-	if cmd.String(flagUser) == "" {
+	if slices.Contains(flagNames, flagUser) && cmd.String(flagUser) == "" {
 		if err = cmd.Set(flagUser, config.Auth.User); err != nil {
 			return fmt.Errorf("cannot set config value '%s' from config file '%s': %w", flagUser, path, err)
+		}
+	}
+
+	if slices.Contains(flagNames, flagSerialNumber) && cmd.String(flagSerialNumber) == "" {
+		if err = cmd.Set(flagSerialNumber, config.Device.SerialNumber); err != nil {
+			return fmt.Errorf("cannot set config value '%s' from config file '%s': %w", flagSerialNumber, path, err)
 		}
 	}
 
@@ -1446,6 +1458,15 @@ func loadConfigFromToml(cmd *cli.Command) error {
 	}
 
 	return nil
+}
+
+// getAllFlagNames gets all active flag names for a command
+func getAllFlagNames(cmd *cli.Command) []string {
+	flagNames := make([]string, len(cmd.Flags))
+	for _, f := range cmd.Flags {
+		flagNames = append(flagNames, f.Names()...)
+	}
+	return flagNames
 }
 
 // failIfFlagsNotPresent fails if any string flag is required, but not provided

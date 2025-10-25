@@ -207,6 +207,10 @@ passwordFile = "/home/myuser/.config/ecolinker.secret"
 # Always print JSON
 [parsing]
 raw = true
+
+# Set your device serial number
+#[device]
+#serialNumber = "XXXX"
 ```
 
 #### Other hints
