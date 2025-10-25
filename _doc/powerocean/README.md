@@ -7,15 +7,22 @@
 EcoFlow offers an endpoint to query **historical data** for PowerOcean devices. This is supported in EcoLinker.
 
 The returned data of the historical data endpoint EcoFlow offers shows the same data as visible inside the mobile
-application, though, the labels might be confusing:
+application, though, the labels might be confusing.
 
-**To Home** is actually the **Total Consumption** shown in the upper left corner of the official mobile application
-for a day/week. To calculate the "From Solar" shown in the bottom left corner:
-`From Solar = To Home - From Battery - From Grid`.
+* `To Home` is actually the **Total Consumption** shown in the upper left corner of the official mobile application
+for a day/week.
+* `From Solar` is actually the **Total Generation** shown in the upper left corner of the official mobile application
+  for a day/week.
 
-**From Solar** is actually the **Total Generation** shown in the upper left corner of the official mobile application
-for a day/week. To calculate the "To Home" shown in the bottom left corner:
-`To Home = From Solar - To Battery - To Grid`.
+To calculate the new values, use the formulae below
+
+```
+# "From Solar" shown in the bottom left corner in the _Consumption_ view
+From Solar' = To Home/Total Consumption - From Battery - From Grid
+
+# "To Home" shown in the bottom left corner in the _Generation_ view
+To Home' = From Solar/Total Generation - To Battery - To Grid
+```
 
 #### Use the [command-line interface client](./../README.md#command-line-interface-client) to fetch data
 
