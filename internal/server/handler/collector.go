@@ -115,3 +115,21 @@ func (h *CollectorHandler) Delete(c *gin.Context) {
 	c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
 	c.Status(http.StatusNoContent)
 }
+
+func (h *CollectorHandler) Invoke(c *gin.Context) {
+	var err error
+	var pathParams api.IDUriRequest
+
+	if err = c.ShouldBindUri(&pathParams); err != nil {
+		AbortWithValidatorPayload(c, err)
+		return
+	}
+
+	if err = h.collectorService.Invoke(pathParams.ID); err != nil {
+		_ = c.AbortWithError(ToHttpStatus(err), err)
+		return
+	}
+
+	c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
+	c.Status(http.StatusNoContent)
+}

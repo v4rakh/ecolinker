@@ -170,6 +170,7 @@ func (s *Server) Start() {
 	apiAuthGroup.POST("/collectors", middlewareEnforceJsonContentType(), collectorHandler.Create)
 	apiAuthGroup.PUT("/collectors/:id", middlewareEnforceJsonContentType(), collectorHandler.Update)
 	apiAuthGroup.DELETE("/collectors/:id", collectorHandler.Delete)
+	apiAuthGroup.POST("/collectors/:id/invoke", collectorHandler.Invoke)
 
 	apiAuthGroup.GET("/ecoflow/status", ecoFlowHandler.BrokerStatus)
 	apiAuthGroup.GET("/ecoflow/devices", ecoFlowHandler.Devices)

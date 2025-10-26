@@ -440,6 +440,20 @@ var (
 		ArgsUsage: "<id>",
 		Action:    collectorsRemove,
 	}
+	CollectorsInvokeCmd = &cli.Command{
+		Name:  "invoke",
+		Usage: "Invokes a collector for a tracked device",
+		Flags: []cli.Flag{
+			configPathFlag,
+			urlFlag,
+			userFlag,
+			passwordFlag,
+			timeoutFlag,
+			printRawFlag,
+		},
+		ArgsUsage: "<id>",
+		Action:    collectorsInvoke,
+	}
 )
 
 func ecoFlowDevicesList(ctx context.Context, cmd *cli.Command) error {
@@ -1337,7 +1351,7 @@ func collectorsRemove(ctx context.Context, cmd *cli.Command) error {
 		return cli.Exit(err, 1)
 	}
 	if !cmd.Args().Present() {
-		return cli.Exit(errors.New("args required - try 'subs rm help'"), 1)
+		return cli.Exit(errors.New("args required - try 'collectors rm help'"), 1)
 	}
 
 	// validate id
@@ -1353,6 +1367,41 @@ func collectorsRemove(ctx context.Context, cmd *cli.Command) error {
 		SetContext(ctx).
 		SetError(&errorRes).
 		Delete(url)
+
+	if err != nil {
+		return cli.Exit(fmt.Errorf(errorCall, err), 1)
+	}
+	if !res.IsSuccess() {
+		return cli.Exit(fmt.Sprintf("error during call: (%d) %+v", res.StatusCode(), errorRes), 1)
+	}
+
+	return nil
+}
+
+func collectorsInvoke(ctx context.Context, cmd *cli.Command) error {
+	if err := loadConfigFromToml(cmd); err != nil {
+		return cli.Exit(err, 1)
+	}
+	if err := failIfFlagsNotPresent(cmd, []string{flagUrl}); err != nil {
+		return cli.Exit(err, 1)
+	}
+	if !cmd.Args().Present() {
+		return cli.Exit(errors.New("args required - try 'collectors invoke help'"), 1)
+	}
+
+	// validate id
+	id := cmd.Args().First()
+	if id == "" || len(id) > 255 {
+		return cli.Exit(errors.New("id cannot be blank or only be 255 characters long"), 1)
+	}
+
+	var errorRes api.ErrorResponse
+	url := fmt.Sprintf("%s/%s/invoke", collectorsUrlPath, id)
+	client := newClient(cmd)
+	res, err := client.R().
+		SetContext(ctx).
+		SetError(&errorRes).
+		Post(url)
 
 	if err != nil {
 		return cli.Exit(fmt.Errorf(errorCall, err), 1)

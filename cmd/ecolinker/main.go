@@ -59,6 +59,7 @@ func main() {
 					terminal.CollectorsListCmd,
 					terminal.CollectorsAddCmd,
 					terminal.CollectorsRmCmd,
+					terminal.CollectorsInvokeCmd,
 				},
 			},
 		},

@@ -227,6 +227,28 @@ func (s *CollectorService) Delete(id string) error {
 	return nil
 }
 
+// Invoke invokes an existing collector by scheduling a one-time job for it
+func (s *CollectorService) Invoke(id string) error {
+	if id == "" {
+		return service_error.ErrValidationNotBlank
+	}
+
+	c, err := s.GetById(id)
+	if err != nil {
+		return err
+	}
+
+	collectorIdentifier := s.runIdentifier(c.ID)
+
+	if _, err = s.taskService.EnqueueOnce(gocron.OneTimeJob(gocron.OneTimeJobStartImmediately()), gocron.NewTask(s.run, context.Background(), c), collectorIdentifier, gocron.WithDisabledDistributedJobLocker(true), gocron.WithTags(jobTagCollectors, collectorIdentifier)); err != nil {
+		return service_error.NewServiceError(service_error.ErrCodeGeneral, fmt.Errorf("could not start collector '%s': %w", c.ID, err))
+	}
+
+	log.Debug().Msgf("Invoked collector '%v'", id)
+
+	return nil
+}
+
 // start starts a collector
 func (s *CollectorService) start(c *model.Collector) error {
 	var err error
@@ -313,7 +335,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 
 		var data dto.EcoFlowHistoryData
 		if data, err = s.ecoFlowHttpService.GetHistory(ctx, c.DeviceSN, beginTime, endTime); err != nil {
-			log.Error().Msgf("Could not get device historical data for collector '%s'", c.ID)
+			log.Error().Msgf("Could not get device historical data for collector '%s'. Reason: %s", c.ID, err.Error())
 			return
 		}
 
@@ -360,7 +382,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 
 		var data map[string]interface{}
 		if data, err = s.ecoFlowHttpService.GetParameters(ctx, c.DeviceSN, p.Parameters); err != nil {
-			log.Error().Msgf("Could not get device parameters for collector '%s'", c.ID)
+			log.Error().Msgf("Could not get device parameters for collector '%s'. Reason: %s", c.ID, err.Error())
 			return
 		}
 
