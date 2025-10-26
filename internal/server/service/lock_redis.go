@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"github.com/go-redsync/redsync/v4"
 	redsyncgoredis "github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/redis/go-redis/v9"

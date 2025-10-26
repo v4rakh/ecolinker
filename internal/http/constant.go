@@ -1,9 +1,6 @@
-package api
+package http
 
 const (
-	HeaderAppName    = "X-App-Name"
-	HeaderAppVersion = "X-App-Version"
-
 	HeaderContentType                = "Content-Type"
 	HeaderContentTypeApplicationJson = "application/json"
 )

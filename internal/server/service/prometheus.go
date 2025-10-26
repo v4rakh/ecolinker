@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/Depado/ginprom"
 	"github.com/gin-gonic/gin"

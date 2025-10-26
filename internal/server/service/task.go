@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"github.com/go-co-op/gocron-redis-lock/v2"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"

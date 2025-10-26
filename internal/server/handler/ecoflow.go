@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"git.myservermanager.com/varakh/ecolinker/api"
+	"git.myservermanager.com/varakh/ecolinker/internal/api"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/dto"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"

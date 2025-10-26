@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"git.myservermanager.com/varakh/ecolinker/api"
+	"git.myservermanager.com/varakh/ecolinker/internal/api"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

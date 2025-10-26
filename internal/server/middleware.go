@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/api"
+	"git.myservermanager.com/varakh/ecolinker/internal/api"
+	httpcommons "git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/handler"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
@@ -14,6 +15,11 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strings"
+)
+
+const (
+	headerAppName    = "X-App-Name"
+	headerAppVersion = "X-App-Version"
 )
 
 // middlewareCors applies CORS configuration
@@ -47,7 +53,7 @@ func middlewarePanicRecoveryHandler(lc *config.Logging) gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Error().Str(lc.EncodingStacktraceKey, string(debug.Stack())).Msgf("panic recovered: %v", err)
-				c.Header(api.HeaderContentType, api.HeaderContentTypeApplicationJson)
+				c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
 				c.AbortWithStatusJSON(http.StatusInternalServerError, api.NewErrorResponseWithStatusAndMessage(string(service_error.ErrCodeGeneral), fmt.Sprintf("%s", err)))
 			}
 		}()
@@ -59,7 +65,7 @@ func middlewarePanicRecoveryHandler(lc *config.Logging) gin.HandlerFunc {
 // middlewareAppName adds custom HTTP header to each request
 func middlewareAppName() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header(api.HeaderAppName, meta.Name)
+		c.Header(headerAppName, meta.Name)
 		c.Next()
 	}
 }
@@ -67,7 +73,7 @@ func middlewareAppName() gin.HandlerFunc {
 // middlewareAppVersion adds custom HTTP header to each request
 func middlewareAppVersion() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header(api.HeaderAppVersion, meta.Version)
+		c.Header(headerAppVersion, meta.Version)
 		c.Next()
 	}
 }
@@ -91,7 +97,7 @@ func middlewareGlobalMethodNotAllowed() gin.HandlerFunc {
 // middlewareEnforceJsonContentType enforces JSON content type
 func middlewareEnforceJsonContentType() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.Method != http.MethodOptions && !strings.HasPrefix(c.GetHeader(api.HeaderContentType), api.HeaderContentTypeApplicationJson) {
+		if c.Request.Method != http.MethodOptions && !strings.HasPrefix(c.GetHeader(httpcommons.HeaderContentType), httpcommons.HeaderContentTypeApplicationJson) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, api.NewErrorResponseWithStatusAndMessage(string(service_error.ErrCodeIllegalArgument), "content-type must be application/json"))
 			return
 		}
@@ -107,7 +113,7 @@ func middlewareErrorTransformer() gin.HandlerFunc {
 
 		if len(c.Errors) > 0 {
 			// status -1 doesn't overwrite existing status code
-			c.Header(api.HeaderContentType, api.HeaderContentTypeApplicationJson)
+			c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
 			c.JSON(-1, api.NewErrorResponseWithStatusAndMessage(handler.CodeToStr(c.Errors.Last()), c.Errors.Last().Error()))
 			return
 		}

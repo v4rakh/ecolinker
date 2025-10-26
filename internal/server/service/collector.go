@@ -12,7 +12,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/dto"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"

@@ -8,7 +8,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/go-ecoflow"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/go-co-op/gocron/v2"

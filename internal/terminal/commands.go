@@ -5,7 +5,8 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/api"
+	"git.myservermanager.com/varakh/ecolinker/internal/api"
+	"git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
@@ -935,7 +936,7 @@ func devicesAdd(ctx context.Context, cmd *cli.Command) error {
 	url := devicesUrlPath
 	res, err := client.R().
 		SetContext(ctx).
-		SetHeader(api.HeaderContentType, api.HeaderContentTypeApplicationJson).
+		SetHeader(http.HeaderContentType, http.HeaderContentTypeApplicationJson).
 		SetBody(&payload).
 		SetResult(&successRes).
 		SetError(&errorRes).
@@ -1079,7 +1080,7 @@ func subsAdd(ctx context.Context, cmd *cli.Command) error {
 
 	res, err := client.R().
 		SetContext(ctx).
-		SetHeader(api.HeaderContentType, api.HeaderContentTypeApplicationJson).
+		SetHeader(http.HeaderContentType, http.HeaderContentTypeApplicationJson).
 		SetBody(&payload).
 		SetResult(&successRes).
 		SetError(&errorRes).
@@ -1230,7 +1231,7 @@ func collectorsAddDeviceParameters(ctx context.Context, cmd *cli.Command) error 
 
 	res, err := client.R().
 		SetContext(ctx).
-		SetHeader(api.HeaderContentType, api.HeaderContentTypeApplicationJson).
+		SetHeader(http.HeaderContentType, http.HeaderContentTypeApplicationJson).
 		SetBody(&payload).
 		SetResult(&successRes).
 		SetError(&errorRes).
@@ -1299,7 +1300,7 @@ func collectorsAddDeviceHistoricalData(ctx context.Context, cmd *cli.Command) er
 
 	res, err := client.R().
 		SetContext(ctx).
-		SetHeader(api.HeaderContentType, api.HeaderContentTypeApplicationJson).
+		SetHeader(http.HeaderContentType, http.HeaderContentTypeApplicationJson).
 		SetBody(&payload).
 		SetResult(&successRes).
 		SetError(&errorRes).

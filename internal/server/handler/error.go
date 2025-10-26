@@ -3,9 +3,9 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/api"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	httpcommons "git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/validate"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -23,7 +23,7 @@ func AbortWithValidatorPayload(c *gin.Context, err error) {
 	}
 
 	resErr := service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("validation error: %v (%w)", str.ValuesString(errorMap), err))
-	c.Header(api.HeaderContentType, api.HeaderContentTypeApplicationJson)
+	c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
 	_ = c.AbortWithError(http.StatusBadRequest, resErr)
 	return
 }

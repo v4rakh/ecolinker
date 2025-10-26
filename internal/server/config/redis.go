@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"github.com/redis/go-redis/v9"
 )
 

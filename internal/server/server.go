@@ -82,7 +82,7 @@ func (s *Server) Start() {
 		log.Fatal().Msgf("Task service creation failed: %v", err)
 	}
 
-	ecoFlowHttpService := service.NewEcoFlowHttpService(cfg.EcoFlow)
+	ecoFlowHttpService := service.NewEcoFlowHttpService(cfg.EcoFlow.AccessKey, cfg.EcoFlow.SecretKey, cfg.EcoFlow.URL)
 
 	mqttForwardService := service.NewMqttForwardService(taskService, cfg.MqttForward)
 	if err = mqttForwardService.Init(); err != nil {

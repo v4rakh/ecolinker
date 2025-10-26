@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"git.myservermanager.com/varakh/ecolinker/internal/locker"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"time"
 )
 

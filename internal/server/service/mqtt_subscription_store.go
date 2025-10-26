@@ -4,7 +4,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"github.com/rs/zerolog/log"
 )
 

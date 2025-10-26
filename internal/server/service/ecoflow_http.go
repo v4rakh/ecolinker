@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/dto"
-	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/go-ecoflow"
 	"github.com/rs/zerolog/log"
 	"regexp"
@@ -15,15 +14,13 @@ import (
 )
 
 type EcoFlowHttpService struct {
-	config     *config.EcoFlow
 	httpClient *ecoflow.Client
 }
 
-func NewEcoFlowHttpService(c *config.EcoFlow) *EcoFlowHttpService {
-	httpClient := ecoflow.NewEcoflowClient(c.AccessKey, c.SecretKey, ecoflow.WithBaseUrl(c.URL))
+func NewEcoFlowHttpService(accessKey string, secretKey string, url string) *EcoFlowHttpService {
+	httpClient := ecoflow.NewEcoflowClient(accessKey, secretKey, ecoflow.WithBaseUrl(url))
 
 	return &EcoFlowHttpService{
-		config:     c,
 		httpClient: httpClient,
 	}
 }

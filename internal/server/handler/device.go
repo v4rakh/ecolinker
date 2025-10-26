@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"git.myservermanager.com/varakh/ecolinker/api"
+	"git.myservermanager.com/varakh/ecolinker/internal/api"
+	httpcommons "git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service"
@@ -113,6 +114,6 @@ func (h *DeviceHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	c.Header(api.HeaderContentType, api.HeaderContentTypeApplicationJson)
+	c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
 	c.Status(http.StatusNoContent)
 }
