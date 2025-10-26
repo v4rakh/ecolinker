@@ -10,7 +10,7 @@ The returned data of the historical data endpoint EcoFlow offers shows the same 
 application, though, the labels might be confusing.
 
 * `To Home` is actually the **Total Consumption** shown in the upper left corner of the official mobile application
-for a day/week.
+  for a day/week.
 * `From Solar` is actually the **Total Generation** shown in the upper left corner of the official mobile application
   for a day/week.
 
@@ -69,9 +69,9 @@ ecolinker_historical_data{attribute="To Grid",device="7QX3V2A9KLM8J5WC",end="202
 ecolinker_historical_data{attribute="To Home",device="7QX3V2A9KLM8J5WC",end="2025-10-19 23:59:59",start="2025-10-13 00:00:00",unit="kWh"} 135
 ```
 
-## Grafana Dashboard
+## Grafana Dashboards
 
-This is how a Grafana dashboard can look like, the source is [dashboard.json](./dashboard.json).
+This is how a Grafana dashboard can look like. The dashboard's JSON is available [here](dashboard_live.json).
 
 ![00.png](00.png)
 
@@ -80,3 +80,8 @@ This is how a Grafana dashboard can look like, the source is [dashboard.json](./
 ![02.png](02.png)
 
 ![03.png](03.png)
+
+To showcase the collector functionality, here's an example for historical data visualizations. The dashboard's JSON is
+available [here](dashboard_history.json).
+
+![04.png](04.png)

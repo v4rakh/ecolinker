@@ -21,7 +21,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "12.0.0+security-01"
+      "version": "12.0.4"
     },
     {
       "type": "datasource",
@@ -64,7 +64,7 @@
       }
     ]
   },
-  "description": "EcoFlow dashboard",
+  "description": "EcoFlow live dashboard",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -142,7 +142,7 @@
       },
       "gridPos": {
         "h": 12,
-        "w": 24,
+        "w": 18,
         "x": 0,
         "y": 1
       },
@@ -165,7 +165,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0+security-01",
+      "pluginVersion": "12.0.4",
       "targets": [
         {
           "datasource": {
@@ -217,19 +217,6 @@
       ],
       "title": "Power",
       "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 13
-      },
-      "id": 73,
-      "panels": [],
-      "title": "Battery",
-      "type": "row"
     },
     {
       "datasource": {
@@ -295,10 +282,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 14
+        "h": 12,
+        "w": 6,
+        "x": 18,
+        "y": 1
       },
       "id": 8,
       "options": {
@@ -319,7 +306,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0+security-01",
+      "pluginVersion": "12.0.4",
       "targets": [
         {
           "datasource": {
@@ -344,7 +331,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 13
       },
       "id": 53,
       "panels": [
@@ -413,7 +400,7 @@
             "h": 15,
             "w": 24,
             "x": 0,
-            "y": 89
+            "y": 26
           },
           "id": 76,
           "options": {
@@ -434,7 +421,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -528,7 +515,7 @@
             "h": 11,
             "w": 12,
             "x": 0,
-            "y": 104
+            "y": 41
           },
           "id": 61,
           "options": {
@@ -549,7 +536,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -631,7 +618,7 @@
             "h": 11,
             "w": 12,
             "x": 12,
-            "y": 104
+            "y": 41
           },
           "id": 63,
           "options": {
@@ -652,7 +639,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -679,7 +666,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 14
       },
       "id": 75,
       "panels": [
@@ -747,7 +734,7 @@
             "h": 14,
             "w": 8,
             "x": 0,
-            "y": 90
+            "y": 53
           },
           "id": 55,
           "options": {
@@ -768,7 +755,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -885,7 +872,7 @@
             "h": 14,
             "w": 8,
             "x": 8,
-            "y": 90
+            "y": 53
           },
           "id": 77,
           "options": {
@@ -906,7 +893,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1023,7 +1010,7 @@
             "h": 14,
             "w": 8,
             "x": 16,
-            "y": 90
+            "y": 53
           },
           "id": 78,
           "options": {
@@ -1044,7 +1031,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1161,7 +1148,7 @@
             "h": 14,
             "w": 8,
             "x": 0,
-            "y": 104
+            "y": 67
           },
           "id": 81,
           "options": {
@@ -1182,7 +1169,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1288,7 +1275,7 @@
             "h": 14,
             "w": 8,
             "x": 8,
-            "y": 104
+            "y": 67
           },
           "id": 79,
           "options": {
@@ -1309,7 +1296,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1415,7 +1402,7 @@
             "h": 14,
             "w": 8,
             "x": 16,
-            "y": 104
+            "y": 67
           },
           "id": 80,
           "options": {
@@ -1436,7 +1423,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1542,7 +1529,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 118
+            "y": 81
           },
           "id": 82,
           "options": {
@@ -1563,7 +1550,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1650,7 +1637,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 15
       },
       "id": 59,
       "panels": [
@@ -1698,7 +1685,7 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 58
+            "y": 99
           },
           "id": 46,
           "options": {
@@ -1718,7 +1705,7 @@
             "textMode": "value",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1781,7 +1768,7 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 58
+            "y": 99
           },
           "id": 70,
           "options": {
@@ -1801,7 +1788,7 @@
             "textMode": "value",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1864,7 +1851,7 @@
             "h": 4,
             "w": 3,
             "x": 6,
-            "y": 58
+            "y": 99
           },
           "id": 72,
           "options": {
@@ -1884,7 +1871,7 @@
             "textMode": "value",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -1947,7 +1934,7 @@
             "h": 4,
             "w": 3,
             "x": 9,
-            "y": 58
+            "y": 99
           },
           "id": 71,
           "options": {
@@ -1967,7 +1954,7 @@
             "textMode": "value",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2015,7 +2002,7 @@
             "h": 4,
             "w": 6,
             "x": 12,
-            "y": 58
+            "y": 99
           },
           "id": 83,
           "options": {
@@ -2035,7 +2022,7 @@
             "textMode": "value",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2082,7 +2069,7 @@
             "h": 4,
             "w": 6,
             "x": 18,
-            "y": 58
+            "y": 99
           },
           "id": 74,
           "options": {
@@ -2102,7 +2089,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2179,7 +2166,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 62
+            "y": 103
           },
           "id": 48,
           "options": {
@@ -2200,7 +2187,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2230,7 +2217,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 16
       },
       "id": 86,
       "panels": [
@@ -2251,7 +2238,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "#f7f7f7"
+                    "color": "green"
                   }
                 ]
               },
@@ -2263,14 +2250,14 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 151
+            "y": 114
           },
           "id": 87,
           "options": {
             "colorMode": "value",
             "graphMode": "none",
             "justifyMode": "auto",
-            "orientation": "auto",
+            "orientation": "horizontal",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
               "calcs": [
@@ -2280,10 +2267,10 @@
               "values": false
             },
             "showPercentChange": false,
-            "textMode": "value",
+            "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2295,7 +2282,7 @@
               "expr": "ecolinker_collector_invocations{job=\"$job\", device=\"$device\"}",
               "instant": true,
               "interval": "",
-              "legendFormat": "{{id}}",
+              "legendFormat": "{{kind}} ({{id}})",
               "refId": "A"
             }
           ],
@@ -2330,13 +2317,13 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 151
+            "y": 114
           },
           "id": 88,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "center",
+            "graphMode": "none",
+            "justifyMode": "auto",
             "orientation": "horizontal",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
@@ -2350,7 +2337,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2358,8 +2345,8 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "timestamp(round(ecolinker_collector_last_invocation{job=\"$job\",device=\"$device\"}, 1)) * 1000",
-              "legendFormat": "{{id}}",
+              "expr": "round(ecolinker_collector_last_invocation{job=\"$job\",device=\"$device\"}, 1) * 1000",
+              "legendFormat": "{{kind}} ({{id}})",
               "range": true,
               "refId": "A"
             }
@@ -2427,7 +2414,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 159
+            "y": 122
           },
           "id": 89,
           "options": {
@@ -2447,7 +2434,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2459,7 +2446,7 @@
               "expr": "rate(ecolinker_collector_invocations{job=\"$job\",device=\"$device\"}[10m])",
               "interval": "",
               "intervalFactor": 3,
-              "legendFormat": "{{id}}",
+              "legendFormat": "{{kind}} ({{id}})",
               "range": true,
               "refId": "A"
             }
@@ -2477,7 +2464,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 17
       },
       "id": 92,
       "panels": [
@@ -2509,7 +2496,7 @@
             "h": 8,
             "w": 9,
             "x": 0,
-            "y": 13
+            "y": 517
           },
           "id": 90,
           "options": {
@@ -2529,7 +2516,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2576,7 +2563,7 @@
             "h": 8,
             "w": 15,
             "x": 9,
-            "y": 13
+            "y": 517
           },
           "id": 91,
           "options": {
@@ -2603,7 +2590,7 @@
             "sizing": "auto",
             "valueMode": "color"
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2651,7 +2638,7 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 29
+            "y": 525
           },
           "id": 93,
           "options": {
@@ -2671,7 +2658,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2716,7 +2703,7 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 29
+            "y": 525
           },
           "id": 94,
           "options": {
@@ -2736,7 +2723,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2781,7 +2768,7 @@
             "h": 4,
             "w": 3,
             "x": 6,
-            "y": 29
+            "y": 525
           },
           "id": 95,
           "options": {
@@ -2801,7 +2788,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2847,7 +2834,7 @@
             "h": 8,
             "w": 15,
             "x": 9,
-            "y": 29
+            "y": 525
           },
           "id": 99,
           "options": {
@@ -2874,7 +2861,7 @@
             "sizing": "auto",
             "valueMode": "color"
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2922,7 +2909,7 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 33
+            "y": 529
           },
           "id": 96,
           "options": {
@@ -2942,7 +2929,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -2987,7 +2974,7 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 33
+            "y": 529
           },
           "id": 97,
           "options": {
@@ -3007,7 +2994,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3052,7 +3039,7 @@
             "h": 4,
             "w": 3,
             "x": 6,
-            "y": 33
+            "y": 529
           },
           "id": 98,
           "options": {
@@ -3072,7 +3059,7 @@
             "textMode": "auto",
             "wideLayout": true
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3155,7 +3142,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 37
+            "y": 533
           },
           "id": 100,
           "options": {
@@ -3176,7 +3163,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3259,7 +3246,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 45
+            "y": 541
           },
           "id": 101,
           "options": {
@@ -3275,7 +3262,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3443,7 +3430,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 45
+            "y": 541
           },
           "id": 102,
           "options": {
@@ -3459,7 +3446,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3591,7 +3578,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 53
+            "y": 549
           },
           "id": 103,
           "options": {
@@ -3607,7 +3594,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3703,7 +3690,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 53
+            "y": 549
           },
           "id": 104,
           "options": {
@@ -3719,7 +3706,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3802,7 +3789,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 61
+            "y": 557
           },
           "id": 105,
           "options": {
@@ -3818,7 +3805,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -3901,7 +3888,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 61
+            "y": 557
           },
           "id": 106,
           "options": {
@@ -3917,7 +3904,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -4001,7 +3988,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 69
+            "y": 565
           },
           "id": 107,
           "options": {
@@ -4017,7 +4004,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -4100,7 +4087,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 69
+            "y": 565
           },
           "id": 108,
           "options": {
@@ -4116,7 +4103,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -4199,7 +4186,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 77
+            "y": 573
           },
           "id": 109,
           "options": {
@@ -4215,7 +4202,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.0+security-01",
+          "pluginVersion": "12.0.4",
           "targets": [
             {
               "datasource": {
@@ -4300,13 +4287,13 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-12h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "EcoLinker",
+  "title": "EcoLinker - Live",
   "uid": "KGnlUEp4s",
-  "version": 1,
+  "version": 57,
   "weekStart": "monday"
 }

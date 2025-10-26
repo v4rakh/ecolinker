@@ -1,4 +1,5 @@
 # README
 
-* Generic starter Grafana dashboard for EcoLinker: [go_ginprom.json](./go_ginprom.json).
-* PowerOcean: [README](./powerocean/README.md)
+* Grafana dashboard for EcoLinker's internals (memory, CPU, HTTP stats): [go_ginprom.json](./go_ginprom.json).
+* Device specific starters
+  * PowerOcean: [README](./powerocean/README.md)

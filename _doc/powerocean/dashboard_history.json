@@ -1,0 +1,593 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "promds",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    },
+    {
+      "name": "DS_EXPRESSION",
+      "label": "Expression",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "__expr__"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "datasource",
+      "id": "__expr__",
+      "version": "1.0.0"
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "12.0.5"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "EcoFlow History dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Consumption - Calculated to match mobile application view\n\n- Total Consumption = Entire consumption of the household\n- From Solar = Direct use of solar power\n- From Battery = Use of battery\n- From Grid = Use of grid (retrieve)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "kwatth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 110,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute!=\"Self-sufficiency\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "instant": false,
+          "legendFormat": "{{attribute}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"To Home\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "format": "time_series",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "TOTAL_CON"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"From Battery\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "FROM_BAT"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"From Grid\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "FROM_GRID"
+        },
+        {
+          "datasource": {
+            "type": "__expr__",
+            "uid": "${DS_EXPRESSION}"
+          },
+          "expression": "$TOTAL_CON-$FROM_BAT-$FROM_GRID",
+          "hide": false,
+          "refId": "From Solar'",
+          "type": "math"
+        }
+      ],
+      "title": "History - Consumption",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "To Home",
+            "renamePattern": "Total Consumption"
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "mode": "inner"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "From Solar": true,
+              "From Solar (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "To Battery": true,
+              "To Battery (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "To Grid": true,
+              "To Grid (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "To Home (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": false
+            },
+            "includeByName": {},
+            "indexByName": {
+              "From Battery": 3,
+              "From Grid": 4,
+              "From Solar": 5,
+              "From Solar' {__name__=\"ecolinker_historical_data\", attribute=\"From Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": 2,
+              "Time": 0,
+              "To Battery": 6,
+              "To Grid": 7,
+              "Total Consumption": 1
+            },
+            "renameByName": {
+              "From Battery (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": "",
+              "From Grid (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": "",
+              "From Solar (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": "",
+              "From Solar {__name__=\"ecolinker_historical_data\", attribute=\"From Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "From Solar",
+              "From Solar' {__name__=\"ecolinker_historical_data\", attribute=\"From Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "From Solar",
+              "TO_HOME {__name__=\"ecolinker_historical_data\", attribute=\"To Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "To Home",
+              "To Home (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": "Total Consumption",
+              "To Home' {__name__=\"ecolinker_historical_data\", attribute=\"To Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "To Home"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Generation - Calculated to match mobile application view\n\n- Total Generation = Entire generation from panels\n- To Home = Exported to household for direct use\n- To Battery = Exported to grid\n- To Grid = Exported to grid",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "kwatth"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 111,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute!=\"Self-sufficiency\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "legendFormat": "{{attribute}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"From Solar\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "format": "time_series",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "TOTAL_GEN"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"To Battery\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "format": "time_series",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "TO_BAT"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"To Grid\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "format": "time_series",
+          "hide": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "TO_GRID"
+        },
+        {
+          "datasource": {
+            "type": "__expr__",
+            "uid": "${DS_EXPRESSION}"
+          },
+          "expression": "$TOTAL_GEN-$TO_BAT-$TO_GRID",
+          "hide": false,
+          "refId": "To Home'",
+          "type": "math"
+        }
+      ],
+      "title": "History - Generation",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "From Solar",
+            "renamePattern": "Total Generation "
+          }
+        },
+        {
+          "id": "joinByField",
+          "options": {
+            "mode": "inner"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "From Battery": true,
+              "From Battery (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "From Grid": true,
+              "From Grid (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "To Home": true,
+              "To Home (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "Total Consumption": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "From Battery": 5,
+              "From Grid": 6,
+              "Time": 0,
+              "To Battery": 3,
+              "To Grid": 4,
+              "To Home": 7,
+              "To Home' {__name__=\"ecolinker_historical_data\", attribute=\"To Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": 2,
+              "Total Generation ": 1
+            },
+            "renameByName": {
+              "From Solar (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": "Total Generation",
+              "From Solar {__name__=\"ecolinker_historical_data\", attribute=\"From Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "From Solar",
+              "From Solar' {__name__=\"ecolinker_historical_data\", attribute=\"From Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "From Solar",
+              "TO_HOME {__name__=\"ecolinker_historical_data\", attribute=\"To Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "To Home",
+              "To Home' {__name__=\"ecolinker_historical_data\", attribute=\"To Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": "To Home"
+            }
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Self-sufficiency - Calculated to match mobile application view",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 113,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_historical_data{job=\"$job\",device=\"$device\",attribute=\"Self-sufficiency\",start=~\"$day_start\",end=~\"$day_end\"}",
+          "legendFormat": "{{attribute}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "History - Self-sufficiency",
+      "type": "stat"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "label": "Datasource",
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(ecolinker_ecoflow_mqtt_enabled,job)",
+        "label": "Job",
+        "name": "job",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(ecolinker_ecoflow_mqtt_enabled,job)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(ecolinker_ecoflow_mqtt_message_last_received{job=\"$job\"},device)",
+        "description": "Serial Number of EcoFlow device",
+        "includeAll": false,
+        "label": "Device",
+        "name": "device",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(ecolinker_ecoflow_mqtt_message_last_received{job=\"$job\"},device)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(ecolinker_historical_data{job=\"$job\"},start)",
+        "description": "Start of day",
+        "includeAll": false,
+        "label": "Day Start",
+        "name": "day_start",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(ecolinker_historical_data{job=\"$job\"},start)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allowCustomValue": false,
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_PROMETHEUS}"
+        },
+        "definition": "label_values(ecolinker_historical_data{job=\"$job\", start=\"$day_start\"},end)",
+        "description": "End of day",
+        "includeAll": false,
+        "label": "Day End",
+        "name": "day_end",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(ecolinker_historical_data{job=\"$job\", start=\"$day_start\"},end)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "EcoLinker - History",
+  "uid": "KGnlUEp4t",
+  "version": 9,
+  "weekStart": "monday"
+}
