@@ -34,3 +34,42 @@ func TestFindInSlice(t *testing.T) {
 	a.False(FindInSlice([]string{"abc"}, "test"))
 	a.False(FindInSlice([]string{""}, "test"))
 }
+
+func TestToSliceAllStrings(t *testing.T) {
+	a := assert.New(t)
+
+	input := []interface{}{"foo", "bar", "baz"}
+	expected := []string{"foo", "bar", "baz"}
+	result, ok := ToSlice(input)
+	a.True(ok)
+	a.Equal(expected, result)
+}
+
+func TestToSliceMixedTypes(t *testing.T) {
+	a := assert.New(t)
+
+	input := []interface{}{"foo", 123, "baz"}
+	result, ok := ToSlice(input)
+	a.False(ok)
+	a.Nil(result)
+}
+
+func TestToSliceEmptySlice(t *testing.T) {
+	a := assert.New(t)
+
+	input := []interface{}{}
+	expected := []string{}
+	result, ok := ToSlice(input)
+	a.True(ok)
+	a.Equal(expected, result)
+}
+
+func TestToSliceNilInput(t *testing.T) {
+	a := assert.New(t)
+
+	var input []interface{}
+	var expected []string
+	result, ok := ToSlice(input)
+	a.True(ok)
+	a.NotEqual(expected, result)
+}

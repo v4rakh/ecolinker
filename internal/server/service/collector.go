@@ -13,6 +13,7 @@ import (
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/service_error"
+	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -105,14 +106,20 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 	var p interface{}
 	switch kind {
 	case constant.CollectorKindDeviceParameters:
-		parameters, ok := payload[parametersPayloadKey].([]string)
+		parameters, ok := payload[parametersPayloadKey].([]interface{})
 		if !ok {
 			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey])))
 		}
 		if parameters == nil {
 			return nil, service_error.ErrValidationNotEmpty
 		}
-		p = dto.CollectorEcoFlowHttpDeviceParameterPayload{Parameters: parameters}
+
+		actualParams, ok := str.ToSlice(parameters)
+		if !ok {
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("not all values for 'parameters' have correct type for collector type '%s'", constant.CollectorKindDeviceParameters)))
+		}
+
+		p = dto.CollectorEcoFlowHttpDeviceParameterPayload{Parameters: actualParams}
 	case constant.CollectorKindDeviceHistoricalData:
 		rangePayload, ok := payload[stepPayloadKey].(string)
 		if !ok {

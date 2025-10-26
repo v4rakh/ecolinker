@@ -36,3 +36,16 @@ func AllContained(a, b []string) bool {
 	}
 	return true
 }
+
+// ToSlice converts an input slice to string slice
+func ToSlice(input []interface{}) ([]string, bool) {
+	output := make([]string, len(input))
+	for i, v := range input {
+		s, ok := v.(string)
+		if !ok {
+			return nil, false
+		}
+		output[i] = s
+	}
+	return output, true
+}
