@@ -197,6 +197,13 @@
           }
         },
         {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "From Solar'(.*)",
+            "renamePattern": "From Solar'"
+          }
+        },
+        {
           "id": "joinByField",
           "options": {
             "mode": "inner"
@@ -219,7 +226,7 @@
               "From Battery": 3,
               "From Grid": 4,
               "From Solar": 5,
-              "From Solar' {__name__=\"ecolinker_historical_data\", attribute=\"From Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": 2,
+              "From Solar'": 2,
               "Time": 0,
               "To Battery": 6,
               "To Grid": 7,
@@ -367,6 +374,13 @@
           }
         },
         {
+          "id": "renameByRegex",
+          "options": {
+            "regex": "To Home'(.*)",
+            "renamePattern": "To Home'"
+          }
+        },
+        {
           "id": "joinByField",
           "options": {
             "mode": "inner"
@@ -382,6 +396,7 @@
               "From Grid (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
               "To Home": true,
               "To Home (2025-10-25 00:00:00 to 2025-10-25 23:59:59)": true,
+              "To Home'": false,
               "Total Consumption": true
             },
             "includeByName": {},
@@ -392,7 +407,7 @@
               "To Battery": 3,
               "To Grid": 4,
               "To Home": 7,
-              "To Home' {__name__=\"ecolinker_historical_data\", attribute=\"To Grid\", collector=\"45c84f02-6987-47b9-b6bf-86f754b40cea\", device=\"HJ36ZDHAZH2A0119\", end=\"2025-10-25 23:59:59\", instance=\"127.0.0.1:8181\", start=\"2025-10-25 00:00:00\", unit=\"kWh\"}": 2,
+              "To Home'": 2,
               "Total Generation ": 1
             },
             "renameByName": {
@@ -588,6 +603,6 @@
   "timezone": "",
   "title": "EcoLinker - History",
   "uid": "KGnlUEp4t",
-  "version": 9,
+  "version": 10,
   "weekStart": "monday"
 }
