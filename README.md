@@ -831,7 +831,7 @@ Once the commit is on `main`, follow these steps to **actually release** the app
     * When asked, enter the version number `v...` (**with** `v`**!**)
     * The pipeline creates a git tag and a release in the VCS management system
     * Wait until the release pipeline succeeded
-* Set a new git tag `latest` (remove old if existing) to the `v...` (this is used for [nix](#nix))
+    * The pipeline also removes existing `latest` git tag and creates a new one on the just released version (this is used for [nix](#nix))
 * (_optional_) Generate the changelog
     * Go into the git repository, make sure to fetch (including just created tag)
     * Requires [git-cliff](https://git-cliff.org/) being installed
