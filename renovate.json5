@@ -23,13 +23,13 @@
     "local>msm/renovate-presets//presets/go-major.json",
     "local>msm/renovate-presets//presets/go-minor-group-automerge.json",
     "local>msm/renovate-presets//presets/go-patch-group-automerge.json",
+    "local>msm/renovate-presets//presets/go-recommended-mod-post.json",
     "packages:eslint",
     "packages:stylelint",
     "packages:tslint",
     "schedule:nonOfficeHours",
     "schedule:automergeNonOfficeHours",
   ],
-  postUpdateOptions: ["gomodTidy", "gomodTidyE"],
   packageRules: [
     {
       matchManagers: ["gomod"],
