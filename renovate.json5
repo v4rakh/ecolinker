@@ -27,8 +27,6 @@
     "packages:eslint",
     "packages:stylelint",
     "packages:tslint",
-    "schedule:nonOfficeHours",
-    "schedule:automergeNonOfficeHours",
   ],
   packageRules: [
     {
