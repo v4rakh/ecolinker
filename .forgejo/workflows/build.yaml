@@ -3,7 +3,7 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
 jobs:
   build:
     runs-on: docker
@@ -16,11 +16,7 @@ jobs:
         name: Tooling
       - uses: ./.forgejo/actions/native-build
         name: Native build
-        with:
-          version: ${{ github.sha }}
       - uses: ./.forgejo/actions/oci-prepare
         name: OCI prepare
       - uses: ./.forgejo/actions/oci-build
         name: OCI build
-        with:
-          loadImage: false

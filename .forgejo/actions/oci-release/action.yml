@@ -20,19 +20,13 @@ runs:
   using: "composite"
   steps:
     - name: Login to Forgejo
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: ${{ inputs.registryFQDN }}
         username: ${{ inputs.registryUser }}
         password: ${{ inputs.registryPass }}
 
-    - name: OCI - [SERVER] build and push
-      uses: docker/build-push-action@v4
-      with:
-        push: true
-        context: .
-        load: false
-        no-cache: true
-        tags: |
-          git.myservermanager.com/varakh/ecolinker:latest
-          git.myservermanager.com/varakh/ecolinker:${{ inputs.version }}
+    - name: OCI - build and push
+      shell: bash
+      run: |
+        docker buildx build --push --no-cache -t git.myservermanager.com/varakh/ecolinker:latest -t git.myservermanager.com/varakh/ecolinker:${{ inputs.version }} -f Dockerfile .

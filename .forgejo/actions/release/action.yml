@@ -11,7 +11,7 @@ runs:
   using: "composite"
   steps:
     - name: Upload artifacts
-      uses: actions/forgejo-release@v1
+      uses: actions/forgejo-release@v2
       with:
         url: https://git.myservermanager.com
         repo: varakh/ecolinker

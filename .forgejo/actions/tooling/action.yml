@@ -2,6 +2,6 @@ runs:
   using: "composite"
   steps:
     - name: Tooling - set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
         go-version: '^1.23'

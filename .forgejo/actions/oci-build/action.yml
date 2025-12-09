@@ -1,17 +1,7 @@
-inputs:
-  loadImage:
-    description: "load image, so it's available after build and thus not automatically removed"
-    required: true
-    type: boolean
 runs:
   using: "composite"
   steps:
     - name: OCI - build
-      uses: docker/build-push-action@v4
-      with:
-        push: false
-        context: .
-        load: ${{ inputs.loadImage }}
-        no-cache: true
-        tags: |
-          varakh/ecolinker:${{ github.sha }}
+      shell: bash
+      run: |
+        docker buildx build --no-cache -t git.myservermanager.com/varakh/ecolinker:${{ github.sha }} -f Dockerfile .
