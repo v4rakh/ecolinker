@@ -14,7 +14,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.18.2
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/go-redsync/redsync/v4 v4.14.1
-	github.com/go-resty/resty/v2 v2.17.0
+	github.com/go-resty/resty/v2 v2.17.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.17.2
@@ -22,7 +22,7 @@ require (
 	github.com/sethvargo/go-envconfig v1.3.0
 	github.com/skynet2/zerolog-gorm v1.1.0
 	github.com/stretchr/testify v1.11.1
-	github.com/urfave/cli/v3 v3.6.1
+	github.com/urfave/cli/v3 v3.6.2
 	go.uber.org/automaxprocs v1.6.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.6.0
