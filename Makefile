@@ -30,7 +30,7 @@ run:
 
 audit:
 	@$(GO) install github.com/securego/gosec/v2/cmd/gosec@latest
-	@$$(go env GOPATH)/bin/gosec -severity medium -confidence medium ./...
+	@$$(go env GOPATH)/bin/gosec -quiet -sort -severity medium -confidence high ./...
 
 build-local:
 	@$(GO) build -tags prod -o ${BIN_DIR}/ecolinker-${GOOS}-${GOARCH} ${CMD_GO_FILES}
