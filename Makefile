@@ -8,9 +8,11 @@ CMD_GO_FILES ?= ./cmd/ecolinker/main.go
 export GO111MODULE=on
 
 BIN_DIR = $(shell pwd)/bin
+TEST_DIR = "$(shell pwd)/coverage"
 
 clean:
 	@rm -rf ${BIN_DIR}
+	@rm -rf ${TEST_DIR}
 	@$(GO) clean -testcache
 
 dependencies:
@@ -22,8 +24,19 @@ checkstyle:
 generate:
 	@$(GO) generate ./...
 
-test-unit:
-	@$(GO_TEST) test -race -shuffle on ./...
+test:
+	$(GO_TEST) test -race -shuffle on -v ./...
+
+test-coverage:
+	@make clean
+	@mkdir -p ${TEST_DIR}
+	$(GO_TEST) build -cover -o ${BIN_DIR}/testapp ./cmd/ecolinker
+	TEST_DIR=${TEST_DIR} TEST_BINARY=${BIN_DIR}/testapp $(GO_TEST) test -coverprofile ${TEST_DIR}/coverage.unit.out -race -shuffle on -v ./...
+	$(GO_TEST) tool covdata textfmt -i=${TEST_DIR} -o=${TEST_DIR}/coverage.integration.out
+	@cat ${TEST_DIR}/coverage.unit.out > ${TEST_DIR}/coverage.out
+	@tail -n +2 ${TEST_DIR}/coverage.integration.out >> ${TEST_DIR}/coverage.out
+	@grep -v -E "dto.go|enum.go|_generated.go|_test.go|main.go" ${TEST_DIR}/coverage.out > ${TEST_DIR}/coverage.final.out || true
+	$(GO_TEST) tool cover -func=${TEST_DIR}/coverage.final.out
 
 run:
 	@$(GO) run ${CMD_GO_FILES} server serve
@@ -56,4 +69,4 @@ build-windows-amd64:
 build-windows-arm64:
 	@GOOS=windows GOARCH=arm64 $(GO) build -tags prod -o ${BIN_DIR}/ecolinker-windows-arm64 ${CMD_GO_FILES}
 
-.PHONY: clean test-unit dependencies checkstyle build build-local build-all build-darwin-amd64 build-darwin-arm64 build-freebsd-amd64 build-freebsd-arm64 build-linux-amd64 build-linux-arm64 build-windows-amd64 build-windows-arm64 run generate audit
+.PHONY: clean dependencies generate build build-local build-all build-darwin-amd64 build-darwin-arm64 build-freebsd-amd64 build-freebsd-arm64 build-linux-amd64 build-linux-arm64 build-windows-amd64 build-windows-arm64 checkstyle audit test test-coverage run

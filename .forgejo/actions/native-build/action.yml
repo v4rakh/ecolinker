@@ -6,10 +6,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Native - build, test
+    - name: Native - checkstyle, audit, build
       shell: bash
       run: |
-        make clean dependencies audit checkstyle test-unit build
+        make clean dependencies checkstyle audit build
+    - name: Native - test
+      shell: bash
+      run: |
+        make test-coverage
     - name: Native - scan
       uses: https://github.com/anchore/scan-action@v6
       with:

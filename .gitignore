@@ -6,6 +6,7 @@
 
 ### Go ###
 bin/
+coverage/
 *.test
 *.out
 go.work
