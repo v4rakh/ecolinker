@@ -1,6 +1,6 @@
 module git.myservermanager.com/varakh/ecolinker
 
-go 1.24.3
+go 1.24.9
 
 require (
 	git.myservermanager.com/varakh/go-ecoflow v1.1.2
@@ -13,7 +13,7 @@ require (
 	github.com/go-co-op/gocron-redis-lock/v2 v2.2.1
 	github.com/go-co-op/gocron/v2 v2.19.1
 	github.com/go-playground/validator/v10 v10.30.1
-	github.com/go-redsync/redsync/v4 v4.15.0
+	github.com/go-redsync/redsync/v4 v4.16.0
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
