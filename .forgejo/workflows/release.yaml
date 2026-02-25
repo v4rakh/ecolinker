@@ -8,21 +8,21 @@ on:
 jobs:
   release:
     runs-on: docker
-    container:
-      image: git.myservermanager.com/msm/executor-ubuntu-build-essential:latest
     steps:
       - uses: actions/checkout@v3
         name: Checkout
-      - uses: ./.forgejo/actions/tooling
-        name: Tooling
       - uses: ./.forgejo/actions/native-build
-        name: Native build
+        name: Native - build
         with:
           version: ${{ inputs.version }}
+      - uses: ./.forgejo/actions/native-scan
+        name: Native - scan
+      - uses: ./.forgejo/actions/native-test
+        name: Native - test
       - uses: ./.forgejo/actions/oci-prepare
-        name: OCI prepare
+        name: OCI - prepare
       - uses: ./.forgejo/actions/oci-release
-        name: OCI release
+        name: OCI - release
         with:
           version: ${{ inputs.version }}
           registryFQDN: git.myservermanager.com
