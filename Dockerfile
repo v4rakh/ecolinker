@@ -1,7 +1,7 @@
 #
 # Build image
 #
-FROM alpine:3.22 AS builder
+FROM alpine:3.23 AS builder
 LABEL maintainer="Varakh <varakh@varakh.de>"
 
 RUN apk --update upgrade && \
@@ -16,14 +16,14 @@ RUN CC=gcc make clean dependencies build-linux-amd64
 #
 # Actual image
 #
-FROM alpine:3.22
+FROM alpine:3.23
 LABEL maintainer="Varakh <varakh@varakh.de>" \
     description="ecolinker" \
     org.opencontainers.image.authors="Varakh" \
     org.opencontainers.image.vendor="Varakh" \
     org.opencontainers.image.title="ecolinker" \
     org.opencontainers.image.description="ecolinker" \
-    org.opencontainers.image.base.name="alpine:3.22"
+    org.opencontainers.image.base.name="alpine:3.23"
 
 ENV USER=appuser
 ENV GROUP=appuser
