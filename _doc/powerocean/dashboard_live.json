@@ -21,7 +21,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "12.0.4"
+      "version": "12.3.6"
     },
     {
       "type": "datasource",
@@ -68,7 +68,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
   "panels": [
     {
@@ -118,6 +117,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -132,7 +132,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               }
             ]
           },
@@ -142,7 +143,7 @@
       },
       "gridPos": {
         "h": 12,
-        "w": 18,
+        "w": 24,
         "x": 0,
         "y": 1
       },
@@ -165,7 +166,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.4",
+      "pluginVersion": "12.3.6",
       "targets": [
         {
           "datasource": {
@@ -253,6 +254,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -269,7 +271,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -282,10 +285,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 6,
-        "x": 18,
-        "y": 1
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 13
       },
       "id": 8,
       "options": {
@@ -306,7 +309,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.4",
+      "pluginVersion": "12.3.6",
       "targets": [
         {
           "datasource": {
@@ -326,339 +329,344 @@
       "type": "timeseries"
     },
     {
-      "collapsed": true,
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 24
       },
       "id": 53,
-      "panels": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 50,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "watt"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 15,
-            "w": 24,
-            "x": 0,
-            "y": 26
-          },
-          "id": 76,
-          "options": {
-            "legend": {
-              "calcs": [
-                "lastNotNull",
-                "min",
-                "max",
-                "mean"
-              ],
-              "displayMode": "table",
-              "placement": "right",
-              "showLegend": true
-            },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "12.0.4",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "editorMode": "code",
-              "expr": "ecolinker_mpptHeartBeat_mpptPv_pwr{job=\"$job\",device=\"$device\"}",
-              "legendFormat": "Watts ({{index0}}, {{index1}})",
-              "range": true,
-              "refId": "A"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "editorMode": "code",
-              "expr": "ecolinker_mpptHeartBeat_mpptPv_vol{job=\"$job\",device=\"$device\"} * ecolinker_mpptHeartBeat_mpptPv_amp{job=\"$job\",device=\"$device\"}",
-              "hide": true,
-              "legendFormat": "Watts verification (voltage x amp) ({{index0}}, {{index1}})",
-              "range": true,
-              "refId": "C"
-            }
-          ],
-          "title": "Solar power",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 50,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "volt"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 11,
-            "w": 12,
-            "x": 0,
-            "y": 41
-          },
-          "id": 61,
-          "options": {
-            "legend": {
-              "calcs": [
-                "lastNotNull",
-                "min",
-                "max",
-                "mean"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "12.0.4",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "editorMode": "code",
-              "expr": "ecolinker_mpptHeartBeat_mpptPv_vol{job=\"$job\",device=\"$device\"}",
-              "legendFormat": "Volts in ({{index0}}, {{index1}})",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Solar voltage",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 50,
-                "gradientMode": "opacity",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "min": 0,
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "amp"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 11,
-            "w": 12,
-            "x": 12,
-            "y": 41
-          },
-          "id": 63,
-          "options": {
-            "legend": {
-              "calcs": [
-                "lastNotNull",
-                "min",
-                "max",
-                "mean"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "12.0.4",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "editorMode": "code",
-              "expr": "ecolinker_mpptHeartBeat_mpptPv_amp{job=\"$job\",device=\"$device\"}",
-              "legendFormat": "Amp in ({{index0}}, {{index1}})",
-              "range": true,
-              "refId": "A"
-            }
-          ],
-          "title": "Solar current",
-          "type": "timeseries"
-        }
-      ],
+      "panels": [],
       "title": "Maximum Power Point Tracking (MPPT)",
       "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 76,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_mpptHeartBeat_mpptPv_pwr{job=\"$job\",device=\"$device\"}",
+          "legendFormat": "Watts ({{index0}}, {{index1}})",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_mpptHeartBeat_mpptPv_vol{job=\"$job\",device=\"$device\"} * ecolinker_mpptHeartBeat_mpptPv_amp{job=\"$job\",device=\"$device\"}",
+          "hide": true,
+          "legendFormat": "Watts verification (voltage x amp) ({{index0}}, {{index1}})",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Solar power",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "volt"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 61,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_mpptHeartBeat_mpptPv_vol{job=\"$job\",device=\"$device\"}",
+          "legendFormat": "Volts in ({{index0}}, {{index1}})",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Solar voltage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "amp"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 63,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "ecolinker_mpptHeartBeat_mpptPv_amp{job=\"$job\",device=\"$device\"}",
+          "legendFormat": "Amp in ({{index0}}, {{index1}})",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Solar current",
+      "type": "timeseries"
     },
     {
       "collapsed": true,
@@ -666,7 +674,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 51
       },
       "id": 75,
       "panels": [
@@ -734,7 +742,7 @@
             "h": 14,
             "w": 8,
             "x": 0,
-            "y": 53
+            "y": 52
           },
           "id": 55,
           "options": {
@@ -755,7 +763,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -872,7 +880,7 @@
             "h": 14,
             "w": 8,
             "x": 8,
-            "y": 53
+            "y": 52
           },
           "id": 77,
           "options": {
@@ -893,7 +901,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -1010,7 +1018,7 @@
             "h": 14,
             "w": 8,
             "x": 16,
-            "y": 53
+            "y": 52
           },
           "id": 78,
           "options": {
@@ -1031,7 +1039,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -1148,7 +1156,7 @@
             "h": 14,
             "w": 8,
             "x": 0,
-            "y": 67
+            "y": 66
           },
           "id": 81,
           "options": {
@@ -1169,7 +1177,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -1275,7 +1283,7 @@
             "h": 14,
             "w": 8,
             "x": 8,
-            "y": 67
+            "y": 66
           },
           "id": 79,
           "options": {
@@ -1296,7 +1304,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -1402,7 +1410,7 @@
             "h": 14,
             "w": 8,
             "x": 16,
-            "y": 67
+            "y": 66
           },
           "id": 80,
           "options": {
@@ -1423,7 +1431,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -1529,7 +1537,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 81
+            "y": 80
           },
           "id": 82,
           "options": {
@@ -1550,7 +1558,7 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "12.0.4",
+          "pluginVersion": "12.0.5",
           "targets": [
             {
               "datasource": {
@@ -1637,7 +1645,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 52
       },
       "id": 59,
       "panels": [
@@ -1685,7 +1693,7 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 99
+            "y": 170
           },
           "id": 46,
           "options": {
@@ -1768,7 +1776,7 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 99
+            "y": 170
           },
           "id": 70,
           "options": {
@@ -1851,7 +1859,7 @@
             "h": 4,
             "w": 3,
             "x": 6,
-            "y": 99
+            "y": 170
           },
           "id": 72,
           "options": {
@@ -1934,7 +1942,7 @@
             "h": 4,
             "w": 3,
             "x": 9,
-            "y": 99
+            "y": 170
           },
           "id": 71,
           "options": {
@@ -2002,7 +2010,7 @@
             "h": 4,
             "w": 6,
             "x": 12,
-            "y": 99
+            "y": 170
           },
           "id": 83,
           "options": {
@@ -2069,7 +2077,7 @@
             "h": 4,
             "w": 6,
             "x": 18,
-            "y": 99
+            "y": 170
           },
           "id": 74,
           "options": {
@@ -2166,7 +2174,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 103
+            "y": 174
           },
           "id": 48,
           "options": {
@@ -2217,7 +2225,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 53
       },
       "id": 86,
       "panels": [
@@ -2250,7 +2258,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 114
+            "y": 185
           },
           "id": 87,
           "options": {
@@ -2317,7 +2325,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 114
+            "y": 185
           },
           "id": 88,
           "options": {
@@ -2414,7 +2422,7 @@
             "h": 10,
             "w": 24,
             "x": 0,
-            "y": 122
+            "y": 193
           },
           "id": 89,
           "options": {
@@ -2464,7 +2472,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 54
       },
       "id": 92,
       "panels": [
@@ -2496,7 +2504,7 @@
             "h": 8,
             "w": 9,
             "x": 0,
-            "y": 517
+            "y": 588
           },
           "id": 90,
           "options": {
@@ -2563,7 +2571,7 @@
             "h": 8,
             "w": 15,
             "x": 9,
-            "y": 517
+            "y": 588
           },
           "id": 91,
           "options": {
@@ -2638,7 +2646,7 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 525
+            "y": 596
           },
           "id": 93,
           "options": {
@@ -2703,7 +2711,7 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 525
+            "y": 596
           },
           "id": 94,
           "options": {
@@ -2768,7 +2776,7 @@
             "h": 4,
             "w": 3,
             "x": 6,
-            "y": 525
+            "y": 596
           },
           "id": 95,
           "options": {
@@ -2834,7 +2842,7 @@
             "h": 8,
             "w": 15,
             "x": 9,
-            "y": 525
+            "y": 596
           },
           "id": 99,
           "options": {
@@ -2909,7 +2917,7 @@
             "h": 4,
             "w": 3,
             "x": 0,
-            "y": 529
+            "y": 600
           },
           "id": 96,
           "options": {
@@ -2974,7 +2982,7 @@
             "h": 4,
             "w": 3,
             "x": 3,
-            "y": 529
+            "y": 600
           },
           "id": 97,
           "options": {
@@ -3039,7 +3047,7 @@
             "h": 4,
             "w": 3,
             "x": 6,
-            "y": 529
+            "y": 600
           },
           "id": 98,
           "options": {
@@ -3142,7 +3150,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 533
+            "y": 604
           },
           "id": 100,
           "options": {
@@ -3246,7 +3254,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 541
+            "y": 612
           },
           "id": 101,
           "options": {
@@ -3430,7 +3438,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 541
+            "y": 612
           },
           "id": 102,
           "options": {
@@ -3578,7 +3586,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 549
+            "y": 620
           },
           "id": 103,
           "options": {
@@ -3690,7 +3698,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 549
+            "y": 620
           },
           "id": 104,
           "options": {
@@ -3789,7 +3797,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 557
+            "y": 628
           },
           "id": 105,
           "options": {
@@ -3888,7 +3896,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 557
+            "y": 628
           },
           "id": 106,
           "options": {
@@ -3988,7 +3996,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 565
+            "y": 636
           },
           "id": 107,
           "options": {
@@ -4087,7 +4095,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 565
+            "y": 636
           },
           "id": 108,
           "options": {
@@ -4186,7 +4194,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 573
+            "y": 644
           },
           "id": 109,
           "options": {
@@ -4225,14 +4233,19 @@
       "type": "row"
     }
   ],
+  "preload": true,
   "refresh": "5s",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
       {
         "allowCustomValue": false,
-        "current": {},
+        "current": {
+          "text": "",
+          "value": "${DS_PROMETHEUS}",
+          "selected": true
+        },
         "label": "Datasource",
         "name": "DS_PROMETHEUS",
         "options": [],
@@ -4294,6 +4307,7 @@
   "timezone": "",
   "title": "EcoLinker - Live",
   "uid": "KGnlUEp4s",
-  "version": 57,
-  "weekStart": "monday"
+  "version": 61,
+  "weekStart": "monday",
+  "id": null
 }
