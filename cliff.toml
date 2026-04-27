@@ -38,7 +38,7 @@ postprocessors = [
 # render body even when there are no releases to process
 # render_always = true
 # output file path
-#output = "CHANGELOG.md"
+output = "CHANGELOG.md"
 
 [git]
 # parse the commits based on https://www.conventionalcommits.org
@@ -61,6 +61,7 @@ commit_parsers = [
     { message = "^feat", group = "<!-- 0 -->🚀 Features" },
     { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
     { message = "^chore|^ci", group = "<!-- 3 -->⚙️ Miscellaneous Tasks" },
+    { message = "^misc", group = "<!-- 3 -->⚙️ Miscellaneous Tasks" },
     { message = "^refactor", group = "<!-- 4 -->🚜 Refactor" },
     { message = "^doc|^docs", group = "<!-- 5 -->📚 Documentation" },
     { message = "^.", skip = true },

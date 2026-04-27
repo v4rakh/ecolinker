@@ -457,7 +457,7 @@ For a full set of available configuration, look into the [Configuration](#config
 
 ### Nix
 
-The git repository contains a flake, meaning you can use it as input with `inputs.ecolinker.url` to import EcoLinker.
+Add EcoLinker as **Nix flakes** input:
 
 ```nix
 # flake.nix
@@ -465,16 +465,6 @@ The git repository contains a flake, meaning you can use it as input with `input
     inputs.ecolinker.url = "git+https://git.myservermanager.com/varakh/ecolinker?ref=refs/tags/latest";
 }
 ```
-
-The `latest` git reference is always set to the latest [release](#release-preparation-and-workflow) version.
-
-If you like to just update EcoLinker, then invoke `nix flake update ecolinker`.
-
-To use it in a systemd service definition, reference it like
-`"${inputs.ecolinker.packages.${pkgs.system}.default}/bin/ecolinker server serve"` and an `ExecStart` directive.
-
-If you like to have it on your `PATH` as a package, e.g., in Home Manager, do
-`home.packages = [ inputs.ecolinker.packages.${pkgs.system}.default ];`. You can then use `ecolinker`.
 
 ### Prometheus
 
@@ -722,85 +712,22 @@ For the full setup, you need the following tools:
 - go (see minimum version in `go.mod`)
 - make to execute commands of the `Makefile`
 
-Though, when you're familiar with [direnv](https://github.com/direnv/direnv) or even the package
-manager [nix](https://nixos.org/), you can achieve a full and easy setup when you go into the project's directory.
+Quick start is to a terminal and run:
 
-### `direnv` / `nix-direnv`
-
-This project can optionally use [direnv](https://github.com/direnv/direnv) (
-or [nix-direnv](https://github.com/nix-community/nix-direnv) with `nix`) to automatically load environment variables
-from an `.env` file. Copy `.env.development` to `.env` and adjust the values accordingly.
-
-When you change directory into the project, the environment variables are automatically loaded after you've allowed
-`direnv` with `direnv allow`.
-
-### Nix Flakes
-
-_In addition_, the project hosts a `flake.nix` and a `flake.lock` file. You can safely ignore them if you don't like to
-use this method of bootstrapping your environment to work with this application. This setup though allows to easily have
-an environment set up for this application by installing necessary required binaries without modifying your OS
-installation. This is done through the package manager [nix](https://nixos.org/) which automatically installs everything
-necessary under a _devShell_ (development shell). From shell which you can enter via `nix develop` inside the project's
-root directory, all the above tools are available.
-To automate it even further, [nix-direnv](https://github.com/nix-community/nix-direnv) recognises when you change
-directory (or open an IDE terminal) within this project (similar to `direnv` itself).
-
-### Setup
-
-1. Copy `.env.development` to `.env`.
-2. Start with `make run`
-
-### Guidelines
-
-* Pay attention to `make checkstyle` (uses `go vet ./...`); pipeline fails if issues are detected.
-* Each entity has its own repository
-* Each entity is only used in repository and service (otherwise, mapping happens, latest at controller level)
-* Presenter layer is constructed from the entity, e.g., in REST responses and mapped
-* No entity is directly returned in any REST response
-* All log calls should be handled by `log.` (zerolog)
-* Configuration is bootstrapped via separated `struct` types which are given to the service which need them
-* Error handling
-    * Always throw an error with `NewServiceError` for repositories, services and handlers
-    * Always throw an error wrapping the cause with `fmt.Errorf`
-    * Forward/bubble up the error directly, when original error is already a `NewServiceError` (most likely internal
-      calls)
-    * Always abort handler chain with `AbortWithError`
-    * Utils can throw any error
-    * Repositories, handlers and services should always properly return `error` including any `init`-like function (
-      best to avoid them and call in `newXXX`). **Do not abort with `Fatalf` or similar**
-    * `log.Fatalf` or `log.Fatal` is allowed in `config.go` or `server.go`
-* Consider reading [Effective Go](https://go.dev/doc/effective_go)
-* Consider reading [100 Go Mistakes and How to Avoid Them](https://100go.co/)
-
-### enum generation
-
-For new enums or when changing existing ones, use the `make generate` task which
-uses [go-enum](https://github.com/abice/go-enum) to generate boilerplate code.
-
-See example `enum.go`. Make sure to use the same `//go:generate` directives.
+```shell
+make run
+```
 
 ### Git workflow
 
 The main branch is `main`. It's protected and only eligible users can push to it. Merge requests to protected branches
-are safe-guarded: they need review or at least a successful pipeline run to be merged.
+are safeguarded: they need review or at least a successful pipeline run to be merged.
 
-- Merge request branches should start with `feat/`, `fix/`, `refactor/`, `chore/`, or `ci/`
-- Merge requests should be squashed and the source branch should be deleted
-- Merge request commits should have a meaningful commit message
-- Merge request titles should have a meaningful title which is taken as commit message once merged
-    - should be prefixed with `feat: ...`, `fix(...): ...`, where the contents inside the bracket should be _one word_
-      which topic/component is touched (conventional commits)
-    - should reflect a breaking change by adding a `!` before the colon, e.g., `fix(deps)!: ...`
-    - should include more verbose information in the body of the git commit message (merge request description)
-
-```
-feat(security)!: add OpenID Connect authentication
-
-- This adds a new authentication mode called oidc
-- This new mode is the default, which might break existing installations
-```
-
-- Merge requests should contain documentation changes, so that code and documentation stays in sync
+- Use conventional commits as commit style and branch naming strategy, e.g., `feat/`, `fix/`, `refactor/`, `chore/`, or
+  `ci/`
+- **All** merge request commits should have a meaningful commit **title** and **message** stating the **why**
+- Use atomic git commits, separate **preparatory** from **functional** commits to speed up review
+- Avoid merging trunk back, use `git-rebase`
 
 ### Pipeline workflow
 
@@ -812,40 +739,32 @@ Pipeline runs
 This means you need to create a merge request to trigger a pipeline run. Without merge request, no build is triggered,
 thus your code cannot be merged.
 
-### Release preparation and workflow
+### Dependency updates
 
-**Prepare** the release with a commit on branch `main`
+Dependency updates are handled by Renovate using the `renovate.json5` file. The base branch is `main`.
 
-* Name your branch `release/v...`
-* Your commit message should be `release: prepare v...`
-* Adapt `Version` in `internal/meta/pkg.go` to `...` (without the `v`!)
-* Adapt `version` in `flake.nix` to `...` (without the `v`!)
-    * Do final sanity checking
-        * Invoke `nix flake update`
-        * Invoke `nix build`
-        * If there's an error, set `vendorHash` to `""`, try again and update the hash
+Major updates undergo manual review.
 
-Once the commit is on `main`, follow these steps to **actually release** the application
+### Releases
 
-* Trigger the pipeline for the commit on the `main`
-    * When asked, enter the version number `v...` (**with** `v`**!**)
-    * The pipeline creates a git tag and a release in the VCS management system
-    * Wait until the release pipeline succeeded
-    * The pipeline also removes existing `latest` git tag and creates a new one on the just released version (this is used for [nix](#nix))
-* (_optional_) Generate the changelog
-    * Go into the git repository, make sure to fetch (including just created tag)
-    * Requires [git-cliff](https://git-cliff.org/) being installed
-    * Invoke from last but one release git tag to the most recent release tag (just created) with
-      `git-cliff OLDTAG..NEWTAG`, e.g., `git-cliff v6.0.0..6.1.0`
-    * This prints markdown to your terminal.
-    * Copy the markdown and edit the release in the VCS management system
+> Use the `v` prefix in the Forge. Don't use it for internal version code references!
 
-Optionally (though heavily recommended), prepare another commit on branch `main` directly after the release is done
-
-* Name your branch `release/prepare-next`
-* Your commit message should be `release: prepare next cycle after v...`
-* Adapt `Version` in `internal/meta/pkg.go` to the next semantic patch version (without the `v`!)
-* Adapt `version` in `flake.nix` to the next semantic patch version (without the `v`!)
+1. Prepare a new MR to trunk with the following changes
+    * Adjust and align versions
+        * `flake.nix`: `version`
+        * `internal/meta/pkg.go`: `Version`
+    * Make sure `make clean dependencies checkstyle audit build-all test-coverage` is fine
+    * Make sure `nix build` is fine (you need `nix` for it, update checksums in `flake.nix` if it fails)
+    * Use `release/` as branch prefix and `release: prepare XYZ` as commit message
+2. Merge to trunk
+3. Trigger the release job the semantic version which is inside the main trunk (use `v` prefix!)
+4. Generate changelog and attach it to the release (use `git-cliff`)
+5. Pull changes from trunk, prepare a new MR to trunk to prepare next version
+    *  Adjust and align versions to the next semantic _patch_ version
+    * `flake.nix`: `version`
+    * `internal/meta/pkg.go`: `Version`
+    * Use `release/` as branch prefix and `release: prepare next cycle...` as commit message
+6. Merge to trunk
 
 ### Dependency updates
 

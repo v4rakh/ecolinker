@@ -23,10 +23,8 @@
             pwd = ./.;
             src = ./.;
             env.CGO_ENABLED = 0;
-            vendorHash = "sha256-cLDLyOdHZqy77oi0L3M5V8culAduwxjcqqB4Ip8GFuM=";
+            vendorHash = "sha256-HHaTnDNMxwjxqqQhLc/IdtNvr+ZErLN/xgrsFjHaYVA=";
           };
         };
-        devShells.default =
-          pkgs.mkShell { packages = with pkgs; [ gnumake go git-cliff ]; };
       });
 }
