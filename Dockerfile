@@ -23,7 +23,8 @@ LABEL maintainer="Varakh <varakh@varakh.de>" \
     org.opencontainers.image.vendor="Varakh" \
     org.opencontainers.image.title="ecolinker" \
     org.opencontainers.image.description="ecolinker" \
-    org.opencontainers.image.base.name="alpine:3.23"
+    org.opencontainers.image.base.name="alpine:3.23" \
+    org.opencontainers.image.source="https://git.myservermanager.com/varakh/ecolinker"
 
 ENV USER=appuser
 ENV GROUP=appuser

@@ -26,10 +26,10 @@ jobs:
         with:
           version: ${{ inputs.version }}
           registryFQDN: git.myservermanager.com
-          registryUser: ${{ secrets.FORGEJO_USER }}
-          registryPass: ${{ secrets.FORGEJO_TOKEN }}
+          registryUser: ${{ secrets.FORGE_USER }}
+          registryPass: ${{ secrets.FORGE_TOKEN }}
       - uses: ./.forgejo/actions/release
         name: Forgejo release
         with:
           version: ${{ inputs.version }}
-          token: ${{ secrets.FORGEJO_TOKEN }}
+          token: ${{ secrets.FORGE_TOKEN }}
