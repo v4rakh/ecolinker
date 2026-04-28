@@ -1,46 +1,43 @@
 #
 # Build image
 #
-FROM alpine:3.23 AS builder
-LABEL maintainer="Varakh <varakh@varakh.de>"
+FROM golang:1.25-alpine AS builder-server
 
-RUN apk --update upgrade && \
-    apk add git && \
-    apk add go gcc make && \
-    rm -rf /var/cache/apk/*
+# Enable automatic toolchain download for Go 1.25+
+ENV GOTOOLCHAIN=auto
 
-WORKDIR /app
+WORKDIR /src
+
+# Download dependencies first (better layer caching)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source
 COPY . .
-RUN CC=gcc make clean dependencies build-linux-amd64
+RUN CGO_ENABLED=0 GOOS=linux go build -tags prod -ldflags="-s -w" -o /ecolinker ./cmd/ecolinker
 
 #
 # Actual image
 #
-FROM alpine:3.23
+FROM gcr.io/distroless/static-debian13:nonroot
+
+# Copy binary
+COPY --from=builder-server /ecolinker /usr/local/bin/ecolinker
+
+# Labels
 LABEL maintainer="Varakh <varakh@varakh.de>" \
     description="ecolinker" \
     org.opencontainers.image.authors="Varakh" \
     org.opencontainers.image.vendor="Varakh" \
     org.opencontainers.image.title="ecolinker" \
     org.opencontainers.image.description="ecolinker" \
-    org.opencontainers.image.base.name="alpine:3.23" \
+    org.opencontainers.image.base.name="gcr.io/distroless/static-debian13:nonroot" \
     org.opencontainers.image.source="https://git.myservermanager.com/varakh/ecolinker"
 
-ENV USER=appuser
-ENV GROUP=appuser
-ENV UID=2033
-ENV GID=2033
-
-RUN apk --update upgrade && \
-    apk add tzdata && \
-    rm -rf /var/cache/apk/* && \
-    addgroup -S ${GROUP} -g ${GID} && \
-    adduser -S ${USER} -G ${GROUP} -u ${UID}
-
-COPY --from=builder /app/bin/ecolinker-linux-amd64 /usr/bin/ecolinker
-
-USER ${USER}
-
+# Expose HTTP port
 ENV SERVER_PORT=8080
 EXPOSE ${SERVER_PORT}
-CMD ["/usr/bin/ecolinker", "server", "serve"]
+
+# Default command
+ENTRYPOINT ["/usr/local/bin/ecolinker"]
+CMD ["server", "serve"]
