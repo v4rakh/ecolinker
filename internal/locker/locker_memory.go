@@ -1,22 +1,19 @@
 package locker
 
 import (
-	"sync"
-	"time"
-)
-
-import (
 	"errors"
+	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
 	MemoryLockerDefaultExpiration time.Duration = 0
-	MemoryLockerNoExpiration                    = -1
+	MemoryLockerNoExpiration      time.Duration = -1
 )
 
-// ErrorNoSuchLock is returned when the requested lock does not exist
-var ErrorNoSuchLock = errors.New("no such lock")
+// ErrNoSuchLock is returned when the requested lock does not exist
+var ErrNoSuchLock = errors.New("no such lock")
 
 // InMemoryLockRegistry provides a locking mechanism based on the passed in reference name
 type InMemoryLockRegistry struct {
@@ -63,7 +60,7 @@ func (l *lockCtr) Unlock() {
 // NewInMemoryLockRegistry creates a new InMemoryLockRegistry
 func NewInMemoryLockRegistry() *InMemoryLockRegistry {
 	return &InMemoryLockRegistry{
-		defaultExpiry: MemoryLockerNoExpiration,
+		defaultExpiry: MemoryLockerNoExpiration.Milliseconds(),
 		locks:         make(map[string]*lockCtr),
 	}
 }
@@ -128,7 +125,7 @@ func (r *InMemoryLockRegistry) Unlock(name string) error {
 	nameLock, exists := r.locks[name]
 	if !exists {
 		r.mu.Unlock()
-		return ErrorNoSuchLock
+		return ErrNoSuchLock
 	}
 
 	if nameLock.count() == 0 {

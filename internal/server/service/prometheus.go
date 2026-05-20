@@ -3,12 +3,13 @@ package service
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/Depado/ginprom"
 	"github.com/gin-gonic/gin"
-	"sync"
 )
 
 type customGauges struct {
@@ -25,7 +26,6 @@ var (
 )
 
 type PrometheusService struct {
-	router           *gin.Engine
 	prometheus       *ginprom.Prometheus
 	prometheusConfig *config.Prometheus
 	customGauges     customGauges

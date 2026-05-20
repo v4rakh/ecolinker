@@ -4,6 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
@@ -13,33 +20,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"go.uber.org/automaxprocs/maxprocs"
-	"net/http"
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
 )
 
 type Server struct {
-	ctx context.Context
 }
 
-func New(ctx *context.Context) *Server {
-	s := &Server{}
-	if ctx == nil {
-		s.ctx = context.Background()
-	} else {
-		s.ctx = *ctx
-	}
-
-	return s
+func New() *Server {
+	return &Server{}
 }
 
-func (s *Server) Start() {
+func (s *Server) Start(ctx context.Context) {
 	var err error
 
 	// configuration init
-	cfg, db := config.LoadFromEnvironment(s.ctx)
+	cfg, db := config.LoadFromEnvironment(ctx)
 
 	log.Info().Msgf("Starting %s %s", meta.Name, meta.Version)
 
@@ -133,7 +127,7 @@ func (s *Server) Start() {
 	collectorHandler := handler.NewCollectorHandler(collectorService)
 	ecoFlowHandler := handler.NewEcoFlowHandler(ecoFlowHttpService, ecoFlowMqttService)
 
-	apiPublicGroup := appRouter.Group(fmt.Sprintf("%s/api/v1", cfg.Server.BasePath))
+	apiPublicGroup := appRouter.Group(cfg.Server.BasePath + "/api/v1")
 	apiPublicGroup.GET("/health", healthHandler.Status)
 	apiPublicGroup.GET("/info", infoHandler.Status)
 
@@ -146,14 +140,12 @@ func (s *Server) Start() {
 	} else if constant.ConfigAuthModeBasicCredentials == cfg.Auth.AuthMethod {
 		authMethodHandler = gin.BasicAuth(cfg.Auth.BasicAuthCredentials)
 	} else if constant.ConfigAuthModeNone == cfg.Auth.AuthMethod {
-		authMethodHandler = func(c *gin.Context) {
-			return
-		}
+		authMethodHandler = func(c *gin.Context) {}
 	} else {
 		log.Fatal().Msgf("No valid auth mode found")
 	}
 
-	apiAuthGroup := appRouter.Group(fmt.Sprintf("%sapi/v1", cfg.Server.BasePath), authMethodHandler)
+	apiAuthGroup := appRouter.Group(cfg.Server.BasePath+"api/v1", authMethodHandler)
 
 	apiAuthGroup.GET("/devices", deviceHandler.GetAll)
 	apiAuthGroup.GET("/devices/:sn", deviceHandler.Get)
@@ -180,8 +172,8 @@ func (s *Server) Start() {
 	apiAuthGroup.GET("/ecoflow/devices/:sn/batteries", ecoFlowHandler.Batteries)
 
 	// start servers (run in separate goroutines)
-	appSrv := s.newServer(appRouter, fmt.Sprintf("%s:%d", cfg.Server.Listen, cfg.Server.Port))
-	prometheusSrv := s.newServer(promRouter, fmt.Sprintf("%s:%d", cfg.Prometheus.Listen, cfg.Prometheus.Port))
+	appSrv := s.newServer(appRouter, fmt.Sprintf("%s:%d", cfg.Server.Listen, cfg.Server.Port), cfg.Server.ReadHeaderTimeout)
+	prometheusSrv := s.newServer(promRouter, fmt.Sprintf("%s:%d", cfg.Prometheus.Listen, cfg.Prometheus.Port), cfg.Server.ReadHeaderTimeout)
 
 	s.startServer(appSrv, cfg.Server)
 
@@ -201,7 +193,7 @@ func (s *Server) Start() {
 
 	log.Info().Msgf("Shutting down...")
 
-	timeoutCtx, timeoutCancel := context.WithTimeout(s.ctx, cfg.Server.Timeout)
+	timeoutCtx, timeoutCancel := context.WithTimeout(ctx, cfg.Server.Timeout)
 	defer timeoutCancel()
 
 	shutdownDone := make(chan struct{})
@@ -209,8 +201,8 @@ func (s *Server) Start() {
 		taskService.Stop()
 		ecoFlowMqttService.Disconnect()
 		mqttForwardService.Disconnect()
-		s.stopServer(s.ctx, appSrv)
-		s.stopServer(s.ctx, prometheusSrv)
+		s.stopServer(ctx, appSrv)
+		s.stopServer(ctx, prometheusSrv)
 		close(shutdownDone)
 	}()
 
@@ -223,15 +215,16 @@ func (s *Server) Start() {
 	}
 }
 
-func (s *Server) newServer(r *gin.Engine, address string) *http.Server {
+func (s *Server) newServer(r *gin.Engine, address string, readHeaderTimeout time.Duration) *http.Server {
 	if r == nil || address == "" {
 		log.Fatal().Msgf("Failed to create server, engine or address is nil")
 		return nil
 	}
 
 	return &http.Server{
-		Addr:    address,
-		Handler: r,
+		Addr:              address,
+		Handler:           r,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 }
 

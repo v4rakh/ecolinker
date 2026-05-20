@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/server/dto"
 	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/go-ecoflow"
 	"github.com/rs/zerolog/log"
-	"regexp"
-	"strings"
-	"time"
 )
 
 type EcoFlowHttpService struct {
@@ -50,7 +51,7 @@ func (s *EcoFlowHttpService) GetParameters(ctx context.Context, sn string, param
 	if sn == "" {
 		return nil, service_error.ErrValidationNotBlank
 	}
-	if params == nil || len(params) == 0 {
+	if len(params) == 0 {
 		return nil, service_error.ErrValidationNotEmpty
 	}
 
@@ -97,7 +98,6 @@ func (s *EcoFlowHttpService) GetBatteries(ctx context.Context, sn string) (map[s
 	filtered := make(map[string]interface{})
 	for k, v := range deviceParams {
 		if re.MatchString(k) && k != ignoreKey {
-
 			jsonStr, ok := v.(string)
 			if !ok {
 				log.Warn().Msgf("Battery information for '%s' is not a valid string, skipping...", v)

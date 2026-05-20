@@ -17,7 +17,7 @@ func extractIndicesAndValueList(input map[string]interface{}) []stringIndexValue
 	re := regexp.MustCompile(`_(\d+)_?`)
 	reMultiUnderscore := regexp.MustCompile(`_+`)
 	reTrim := regexp.MustCompile(`^_+|_+$`)
-	var result []stringIndexValueMap
+	result := make([]stringIndexValueMap, 0, len(input))
 
 	for rawKey, val := range input {
 		indices := make(map[string]int)

@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
@@ -14,8 +17,6 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"strings"
-	"sync"
 )
 
 type EcoFlowMqttService struct {
@@ -141,7 +142,6 @@ func (s *EcoFlowMqttService) SyncSubscriptions() {
 					log.Error().Msgf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", sub.DeviceSN, sub.TopicKind, err)
 					continue
 				}
-				break
 			}
 		}
 	}

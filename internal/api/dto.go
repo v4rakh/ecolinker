@@ -7,53 +7,53 @@ import "time"
 // json/body
 
 type EcoFlowDeviceParametersRequest struct {
-	Parameters []string `json:"parameters" binding:"required,min=1"`
+	Parameters []string `binding:"required,min=1" json:"parameters"`
 }
 
 type CreateDeviceRequest struct {
-	SN    string `json:"sn" binding:"required,min=1,max=255"`
-	Label string `json:"label" binding:"required,min=1,max=255"`
-	Kind  string `json:"kind" binding:"required,oneof=other powerocean"`
+	SN    string `binding:"required,min=1,max=255"          json:"sn"`
+	Label string `binding:"required,min=1,max=255"          json:"label"`
+	Kind  string `binding:"required,oneof=other powerocean" json:"kind"`
 }
 
 type ModifyDeviceRequest struct {
-	SN    string `json:"sn" binding:"required,min=1,max=255"`
-	Label string `json:"label" binding:"required,min=1,max=255"`
-	Kind  string `json:"kind" binding:"required,oneof=other powerocean"`
+	SN    string `binding:"required,min=1,max=255"          json:"sn"`
+	Label string `binding:"required,min=1,max=255"          json:"label"`
+	Kind  string `binding:"required,oneof=other powerocean" json:"kind"`
 }
 
 type CreateMqttSubscriptionRequest struct {
-	DeviceSN  string `json:"deviceSN" binding:"required,min=1"`
-	TopicKind string `json:"topicKind" binding:"required,oneof=quota status"`
+	DeviceSN  string `binding:"required,min=1"              json:"deviceSN"`
+	TopicKind string `binding:"required,oneof=quota status" json:"topicKind"`
 }
 
 type ModifyMqttSubscriptionRequest struct {
-	DeviceSN  string `json:"deviceSN" binding:"required,min=1"`
-	TopicKind string `json:"topicKind" binding:"required,oneof=quota status"`
+	DeviceSN  string `binding:"required,min=1"              json:"deviceSN"`
+	TopicKind string `binding:"required,oneof=quota status" json:"topicKind"`
 }
 
 type CreateCollectorRequest struct {
-	DeviceSN  string                 `json:"deviceSN" binding:"required,min=1"`
-	Kind      string                 `json:"kind" binding:"required,oneof=device_parameters device_historical_data"`
-	Frequency string                 `json:"frequency" binding:"required"`
+	DeviceSN  string                 `binding:"required,min=1"                                          json:"deviceSN"`
+	Kind      string                 `binding:"required,oneof=device_parameters device_historical_data" json:"kind"`
+	Frequency string                 `binding:"required"                                                json:"frequency"`
 	Payload   map[string]interface{} `json:"payload"`
 }
 
 type ModifyCollectorRequest struct {
-	DeviceSN  string                 `json:"deviceSN" binding:"required,min=1"`
-	Kind      string                 `json:"kind" binding:"required,oneof=device_parameters device_historical_data"`
-	Frequency string                 `json:"frequency" binding:"required"`
+	DeviceSN  string                 `binding:"required,min=1"                                          json:"deviceSN"`
+	Kind      string                 `binding:"required,oneof=device_parameters device_historical_data" json:"kind"`
+	Frequency string                 `binding:"required"                                                json:"frequency"`
 	Payload   map[string]interface{} `json:"payload"`
 }
 
 // uri parameters
 
 type SNUriRequest struct {
-	SN string `uri:"sn" binding:"required,min=1"`
+	SN string `binding:"required,min=1" uri:"sn"`
 }
 
 type IDUriRequest struct {
-	ID string `uri:"id" binding:"required,uuid4"`
+	ID string `binding:"required,uuid4" uri:"id"`
 }
 
 // query parameters
@@ -63,8 +63,8 @@ type SNQueryParameterRequest struct {
 }
 
 type HistoryQueryParameterRequest struct {
-	BeginTime string `form:"beginTime" binding:"required"`
-	EndTime   string `form:"endTime" binding:"required"`
+	BeginTime string `binding:"required" form:"beginTime"`
+	EndTime   string `binding:"required" form:"endTime"`
 }
 
 // Responses

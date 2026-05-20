@@ -5,6 +5,14 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"os"
+	"slices"
+	"sort"
+	"strconv"
+	"strings"
+	"text/tabwriter"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/api"
 	"git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
@@ -15,20 +23,13 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/go-resty/resty/v2"
 	"github.com/urfave/cli/v3"
-	"os"
-	"slices"
-	"sort"
-	"strconv"
-	"strings"
-	"text/tabwriter"
-	"time"
 )
 
 const (
 	envConfig   = "ECOLINKER_CONFIG"
 	envUrl      = "ECOLINKER_URL"
 	envUser     = "ECOLINKER_USER"
-	envPassword = "ECOLINKER_PASSWORD"
+	envPassword = "ECOLINKER_PASSWORD" //nolint:gosec // G101: env var name, not a credential
 
 	flagConfig       = "config"
 	flagUrl          = "url"
@@ -198,7 +199,7 @@ var (
 	}
 	stepFlag = &cli.StringFlag{
 		Name:  flagStep,
-		Usage: fmt.Sprintf("Time range to query when collector runs which uses full PAST period (last week starting from Monday to Sunday or yesterday), one of: %s", strings.Join(constant.HistoricalDataStepNames(), " ")),
+		Usage: "Time range to query when collector runs which uses full PAST period (last week starting from Monday to Sunday or yesterday), one of: " + strings.Join(constant.HistoricalDataStepNames(), " "),
 		Validator: func(v string) error {
 			_, err := constant.ParseHistoricalDataStep(v)
 			return err
@@ -465,7 +466,7 @@ func ecoFlowDevicesList(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	client := newClient(cmd)
-	url := fmt.Sprintf("%s/devices", ecoFlowUrlPath)
+	url := ecoFlowUrlPath + "/devices"
 
 	var successRes api.EcoFlowDeviceListDataResponse
 	var errorRes api.ErrorResponse
@@ -524,7 +525,7 @@ func ecoFlowDeviceParameters(ctx context.Context, cmd *cli.Command) error {
 
 	var err error
 	var res *resty.Response
-	if params != nil && len(params) > 0 {
+	if len(params) > 0 {
 		payload := api.EcoFlowDeviceParametersRequest{
 			Parameters: collectorPayloadParameters,
 		}
@@ -688,9 +689,7 @@ func ecoFlowDeviceHistory(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		header = getDeviceHistoryHeader(rowWise, successRes.Data)
-		for _, r := range getDeviceHistoryRows(rowWise, successRes.Data, t.Start, t.End) {
-			rows = append(rows, r)
-		}
+		rows = append(rows, getDeviceHistoryRows(rowWise, successRes.Data, t.Start, t.End)...)
 	}
 
 	if cmd.Bool(flagPrintCsv) {
@@ -714,8 +713,8 @@ func getDeviceHistoryHeader(rowWise bool, data []*api.EcoFlowHistoryItemResponse
 	})
 
 	for _, v := range data {
-		header = append(header, fmt.Sprintf("%s Value", v.IndexName))
-		header = append(header, fmt.Sprintf("%s Unit", v.IndexName))
+		header = append(header, v.IndexName+" Value")
+		header = append(header, v.IndexName+" Unit")
 	}
 
 	return header
@@ -796,13 +795,15 @@ func printDeviceHistoryTabular(header []string, rows [][]string) cli.ExitCoder {
 
 func getTabularFormatAndArgs(data []string) (string, []interface{}) {
 	format := ""
+	var formatSb799 strings.Builder
 	for i := range data {
 		if len(data)-1 == i {
-			format += "%v"
+			formatSb799.WriteString("%v")
 		} else {
-			format += "%v\t"
+			formatSb799.WriteString("%v\t")
 		}
 	}
+	format += formatSb799.String()
 	format += "\n"
 
 	args := make([]interface{}, len(data))
@@ -822,7 +823,7 @@ func ecoFlowBrokerStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	client := newClient(cmd)
-	url := fmt.Sprintf("%s/status", ecoFlowUrlPath)
+	url := ecoFlowUrlPath + "/status"
 
 	var successRes api.EcoFlowBrokerStatusDataResponse
 	var errorRes api.ErrorResponse
@@ -861,7 +862,7 @@ func ecoFlowBrokerStatus(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-func devicesList(ctx context.Context, cmd *cli.Command) error {
+func devicesList(ctx context.Context, cmd *cli.Command) error { //nolint:dupl // CLI boilerplate, differs in response type and output columns
 	if err := loadConfigFromToml(cmd); err != nil {
 		return cli.Exit(err, 1)
 	}
@@ -933,7 +934,7 @@ func devicesAdd(ctx context.Context, cmd *cli.Command) error {
 	// validate kind
 	kind := cmd.String(flagDeviceKind)
 	if !str.FindInSlice(constant.DeviceKindNames(), kind) {
-		return cli.Exit(errors.New(fmt.Sprintf("device kind must be one of %v", constant.DeviceKindNames())), 1)
+		return cli.Exit(fmt.Errorf("device kind must be one of %v", constant.DeviceKindNames()), 1)
 	}
 
 	// fully constructed payload
@@ -1011,7 +1012,7 @@ func devicesRemove(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-func subsList(ctx context.Context, cmd *cli.Command) error {
+func subsList(ctx context.Context, cmd *cli.Command) error { //nolint:dupl // CLI boilerplate, differs in response type and output columns
 	if err := loadConfigFromToml(cmd); err != nil {
 		return cli.Exit(err, 1)
 	}
@@ -1077,7 +1078,7 @@ func subsAdd(ctx context.Context, cmd *cli.Command) error {
 	// validate topic kind
 	tk := cmd.String(flagTopicKind)
 	if !str.FindInSlice(constant.TopicKindNames(), tk) {
-		return cli.Exit(errors.New(fmt.Sprintf("topic kind must be one of %v", constant.TopicKindNames())), 1)
+		return cli.Exit(fmt.Errorf("topic kind must be one of %v", constant.TopicKindNames()), 1)
 	}
 
 	// fully constructed payload
@@ -1205,7 +1206,7 @@ func collectorsList(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-func collectorsAddDeviceParameters(ctx context.Context, cmd *cli.Command) error {
+func collectorsAddDeviceParameters(ctx context.Context, cmd *cli.Command) error { //nolint:dupl // CLI boilerplate, differs in payload field and collector kind
 	if err := loadConfigFromToml(cmd); err != nil {
 		return cli.Exit(err, 1)
 	}
@@ -1274,7 +1275,7 @@ func collectorsAddDeviceParameters(ctx context.Context, cmd *cli.Command) error 
 	return nil
 }
 
-func collectorsAddDeviceHistoricalData(ctx context.Context, cmd *cli.Command) error {
+func collectorsAddDeviceHistoricalData(ctx context.Context, cmd *cli.Command) error { //nolint:dupl // CLI boilerplate, differs in payload field and collector kind
 	if err := loadConfigFromToml(cmd); err != nil {
 		return cli.Exit(err, 1)
 	}
@@ -1440,7 +1441,7 @@ func loadConfigFromToml(cmd *cli.Command) error {
 	path := cmd.String(flagConfig)
 
 	if path == "" {
-		if foundPath, err := xdg.SearchConfigFile(fmt.Sprintf("%s.toml", meta.Name)); err == nil {
+		if foundPath, err := xdg.SearchConfigFile(meta.Name + ".toml"); err == nil {
 			path = foundPath
 		} else {
 			return nil
@@ -1448,7 +1449,7 @@ func loadConfigFromToml(cmd *cli.Command) error {
 	}
 
 	if _, err := os.Stat(path); err != nil {
-		return nil
+		return fmt.Errorf("cannot stat config file '%s': %w", path, err)
 	}
 
 	var err error
@@ -1512,7 +1513,7 @@ func loadConfigFromToml(cmd *cli.Command) error {
 
 // getAllFlagNames gets all active flag names for a command
 func getAllFlagNames(cmd *cli.Command) []string {
-	flagNames := make([]string, len(cmd.Flags))
+	flagNames := make([]string, 0, len(cmd.Flags))
 	for _, f := range cmd.Flags {
 		flagNames = append(flagNames, f.Names()...)
 	}
@@ -1527,7 +1528,7 @@ func failIfFlagsNotPresent(cmd *cli.Command, flagKeys []string) error {
 
 	for _, key := range flagKeys {
 		if cmd.String(key) == "" {
-			return errors.New(fmt.Sprintf("'%v' is required but blank", key))
+			return fmt.Errorf("'%v' is required but blank", key)
 		}
 	}
 

@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
+	"strconv"
+	"strings"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/float"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/go-ecoflow"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog/log"
-	"maps"
-	"slices"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -132,7 +133,8 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 
 		metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
-		metricLabelKeys := []string{"device"}
+		metricLabelKeys := make([]string, 0, 1+len(valueMap.Indices))
+		metricLabelKeys = append(metricLabelKeys, "device")
 		metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)
 
 		metricLabelValues := []string{h.DeviceSN}

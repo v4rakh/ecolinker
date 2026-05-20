@@ -2,6 +2,10 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"runtime/debug"
+	"strings"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/api"
 	httpcommons "git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
@@ -12,9 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"net/http"
-	"runtime/debug"
-	"strings"
 )
 
 const (
@@ -82,7 +83,6 @@ func middlewareAppVersion() gin.HandlerFunc {
 func middlewareGlobalNotFound() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusNotFound, api.NewErrorResponseWithStatusAndMessage(string(service_error.ErrCodeNotFound), "page not found"))
-		return
 	}
 }
 
@@ -90,7 +90,6 @@ func middlewareGlobalNotFound() gin.HandlerFunc {
 func middlewareGlobalMethodNotAllowed() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusMethodNotAllowed, api.NewErrorResponseWithStatusAndMessage(string(service_error.ErrCodeMethodNotAllowed), "method not allowed"))
-		return
 	}
 }
 

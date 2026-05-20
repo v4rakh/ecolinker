@@ -6,6 +6,10 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	golog "log"
+	"os"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/validate"
 	"github.com/golang-migrate/migrate/v4"
@@ -16,73 +20,71 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sethvargo/go-envconfig"
-	"github.com/skynet2/zerolog-gorm"
+	zerologgorm "github.com/skynet2/zerolog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	golog "log"
-	"os"
-	"time"
 )
 
 //go:embed migrations_postgres/*.sql
 var migrationPostgresFS embed.FS
 
 type Logging struct {
-	Encoding              constant.ConfigLogEncoding    `env:"LOGGING_ENCODING,default=console" validate:"required,oneof=json console"`
+	Encoding              constant.ConfigLogEncoding    `env:"LOGGING_ENCODING,default=console"                   validate:"required,oneof=json console"`
 	EncodingColorize      bool                          `env:"LOGGING_ENCODING_COLORIZE,default=false"`
-	EncodingErrorKey      string                        `env:"LOGGING_ENCODING_ERROR_KEY,default=error" validate:"required"`
-	EncodingFileKey       string                        `env:"LOGGING_ENCODING_FILE_KEY,default=file" validate:"required"`
-	EncodingFuncKey       string                        `env:"LOGGING_ENCODING_FUNC_KEY,default=func" validate:"required"`
-	EncodingLevelKey      string                        `env:"LOGGING_ENCODING_LEVEL_KEY,default=level" validate:"required"`
-	EncodingMessageKey    string                        `env:"LOGGING_ENCODING_MESSAGE_KEY,default=msg" validate:"required"`
+	EncodingErrorKey      string                        `env:"LOGGING_ENCODING_ERROR_KEY,default=error"           validate:"required"`
+	EncodingFileKey       string                        `env:"LOGGING_ENCODING_FILE_KEY,default=file"             validate:"required"`
+	EncodingFuncKey       string                        `env:"LOGGING_ENCODING_FUNC_KEY,default=func"             validate:"required"`
+	EncodingLevelKey      string                        `env:"LOGGING_ENCODING_LEVEL_KEY,default=level"           validate:"required"`
+	EncodingMessageKey    string                        `env:"LOGGING_ENCODING_MESSAGE_KEY,default=msg"           validate:"required"`
 	EncodingStacktraceKey string                        `env:"LOGGING_ENCODING_STACKTRACE_KEY,default=stacktrace" validate:"required"`
-	EncodingTimeEncoder   constant.ConfigLogTimeEncoder `env:"LOGGING_ENCODING_TIME_ENCODER,default=rfc3339" validate:"required,oneof=epoch epochmillis epochnanos iso8601 rfc3339 rfc3339nano"`
-	EncodingTimeKey       string                        `env:"LOGGING_ENCODING_TIME_KEY,default=ts" validate:"required"`
-	Level                 string                        `env:"LOGGING_LEVEL,default=info" validate:"required,oneof=trace debug info warn error fatal panic disabled"`
-	LevelRequests         string                        `env:"LOGGING_LEVEL_REQUESTS,default=disabled" validate:"required,oneof=trace debug info warn error fatal panic disabled"`
+	EncodingTimeEncoder   constant.ConfigLogTimeEncoder `env:"LOGGING_ENCODING_TIME_ENCODER,default=rfc3339"      validate:"required,oneof=epoch epochmillis epochnanos iso8601 rfc3339 rfc3339nano"`
+	EncodingTimeKey       string                        `env:"LOGGING_ENCODING_TIME_KEY,default=ts"               validate:"required"`
+	Level                 string                        `env:"LOGGING_LEVEL,default=info"                         validate:"required,oneof=trace debug info warn error fatal panic disabled"`
+	LevelRequests         string                        `env:"LOGGING_LEVEL_REQUESTS,default=disabled"            validate:"required,oneof=trace debug info warn error fatal panic disabled"`
 }
 
 type App struct {
-	TimeZone    string `env:"TZ,default=Etc/UTC" validate:"required"`
+	TimeZone    string `env:"TZ,default=Etc/UTC"        validate:"required"`
 	Development bool   `env:"DEVELOPMENT,default=false"`
 }
 
 type Auth struct {
-	AuthMethod           constant.ConfigAuthMode `env:"AUTH_MODE,default=none" validate:"required,oneof=none basic_single basic_credentials"`
-	BasicAuthUser        string                  `env:"BASIC_AUTH_USER" validate:"required_if=AuthMethod basic_single"`
-	BasicAuthPassword    string                  `env:"BASIC_AUTH_PASSWORD" validate:"required_if=AuthMethod basic_single"`
+	AuthMethod           constant.ConfigAuthMode `env:"AUTH_MODE,default=none"                         validate:"required,oneof=none basic_single basic_credentials"`
+	BasicAuthUser        string                  `env:"BASIC_AUTH_USER"                                validate:"required_if=AuthMethod basic_single"`
+	BasicAuthPassword    string                  `env:"BASIC_AUTH_PASSWORD"                            validate:"required_if=AuthMethod basic_single"`
 	BasicAuthCredentials map[string]string       `env:"BASIC_AUTH_CREDENTIALS,separator=|,delimiter=;" validate:"required_if=AuthMethod basic_credentials"`
 }
 
 type EcoFlow struct {
-	URL                      string        `env:"ECOFLOW_URL,default=https://api-e.ecoflow.com" validate:"required"`
-	AccessKey                string        `env:"ECOFLOW_ACCESS_KEY,required" validate:"required"`
-	SecretKey                string        `env:"ECOFLOW_SECRET_KEY,required" validate:"required"`
+	URL                      string        `env:"ECOFLOW_URL,default=https://api-e.ecoflow.com"  validate:"required"`
+	AccessKey                string        `env:"ECOFLOW_ACCESS_KEY,required"                    validate:"required"`
+	SecretKey                string        `env:"ECOFLOW_SECRET_KEY,required"                    validate:"required"`
 	MqttEnabled              bool          `env:"ECOFLOW_MQTT_ENABLED,default=true"`
 	MqttMaxReconnectInterval time.Duration `env:"ECOFLOW_MQTT_MAX_RECONNECT_INTERVAL,default=1h" validate:"gte=0"`
-	MqttWaitDisconnect       uint          `env:"ECOFLOW_MQTT_WAIT_DISCONNECT,default=1000" validate:"numeric,gte=0"`
+	MqttWaitDisconnect       uint          `env:"ECOFLOW_MQTT_WAIT_DISCONNECT,default=1000"      validate:"numeric,gte=0"`
 	MqttDebugMessages        bool          `env:"ECOFLOW_MQTT_DEBUG_MESSAGES,default=false"`
 }
 
 type MqttForward struct {
 	Enabled              bool          `env:"MQTT_FORWARD_ENABLED,default=false"`
-	Protocol             string        `env:"MQTT_FORWARD_PROTOCOL,default=tcp" validate:"required_if=Enabled true,oneof=tcp ssl ws mqtts"`
-	Host                 string        `env:"MQTT_FORWARD_HOST" validate:"required_if=Enabled true"`
-	Port                 int           `env:"MQTT_FORWARD_PORT,default=1883" validate:"required_if=Enabled true,gte=1"`
+	Protocol             string        `env:"MQTT_FORWARD_PROTOCOL,default=tcp"              validate:"required_if=Enabled true,oneof=tcp ssl ws mqtts"`
+	Host                 string        `env:"MQTT_FORWARD_HOST"                              validate:"required_if=Enabled true"`
+	Port                 int           `env:"MQTT_FORWARD_PORT,default=1883"                 validate:"required_if=Enabled true,gte=1"`
 	MaxReconnectInterval time.Duration `env:"MQTT_FORWARD_MAX_RECONNECT_INTERVAL,default=1h" validate:"gte=0"`
-	WaitDisconnect       uint          `env:"MQTT_FORWARD_WAIT_DISCONNECT,default=1000" validate:"numeric,gte=0"`
+	WaitDisconnect       uint          `env:"MQTT_FORWARD_WAIT_DISCONNECT,default=1000"      validate:"numeric,gte=0"`
 	Username             string        `env:"MQTT_FORWARD_USERNAME"`
 	Password             string        `env:"MQTT_FORWARD_PASSWORD"`
 }
 
 type Server struct {
-	Port        int           `env:"SERVER_PORT,default=8080" validate:"gte=1"`
-	Listen      string        `env:"SERVER_LISTEN"`
-	BasePath    string        `env:"SERVER_BASE_PATH,default=/" validate:"required"`
-	TlsEnabled  bool          `env:"SERVER_TLS_ENABLED,default=false"`
-	TlsCertPath string        `env:"SERVER_TLS_CERT_PATH"`
-	TlsKeyPath  string        `env:"SERVER_TLS_KEY_PATH"`
-	Timeout     time.Duration `env:"SERVER_TIMEOUT,default=10s" validate:"gte=0"`
+	Port              int           `env:"SERVER_PORT,default=8080"               validate:"gte=1"`
+	Listen            string        `env:"SERVER_LISTEN"`
+	BasePath          string        `env:"SERVER_BASE_PATH,default=/"             validate:"required"`
+	TlsEnabled        bool          `env:"SERVER_TLS_ENABLED,default=false"`
+	TlsCertPath       string        `env:"SERVER_TLS_CERT_PATH"`
+	TlsKeyPath        string        `env:"SERVER_TLS_KEY_PATH"`
+	Timeout           time.Duration `env:"SERVER_TIMEOUT,default=10s"             validate:"gte=0"`
+	ReadHeaderTimeout time.Duration `env:"SERVER_READ_HEADER_TIMEOUT,default=30s" validate:"gte=0"`
 }
 
 type Cors struct {
@@ -94,38 +96,38 @@ type Cors struct {
 }
 
 type Database struct {
-	Type             constant.ConfigDatabaseType `env:"DB_TYPE,default=postgres" validate:"required,oneof=postgres"`
+	Type             constant.ConfigDatabaseType `env:"DB_TYPE,default=postgres"           validate:"required,oneof=postgres"`
 	MigrationEnabled bool                        `env:"DB_MIGRATION_ENABLED,default=true"`
 	PostgresHost     string                      `env:"DB_POSTGRES_HOST,default=localhost" validate:"required_if=Type postgres"`
-	PostgresPort     int                         `env:"DB_POSTGRES_PORT,default=5432" validate:"required_if=Type postgres"`
-	PostgresName     string                      `env:"DB_POSTGRES_NAME" validate:"required_if=Type postgres"`
-	PostgresTimeZone string                      `env:"DB_POSTGRES_TZ,default=Etc/UTC" validate:"required_if=Type postgres"`
-	PostgresUser     string                      `env:"DB_POSTGRES_USER" validate:"required_if=Type postgres"`
-	PostgresPassword string                      `env:"DB_POSTGRES_PASSWORD" validate:"required_if=Type postgres"`
+	PostgresPort     int                         `env:"DB_POSTGRES_PORT,default=5432"      validate:"required_if=Type postgres"`
+	PostgresName     string                      `env:"DB_POSTGRES_NAME"                   validate:"required_if=Type postgres"`
+	PostgresTimeZone string                      `env:"DB_POSTGRES_TZ,default=Etc/UTC"     validate:"required_if=Type postgres"`
+	PostgresUser     string                      `env:"DB_POSTGRES_USER"                   validate:"required_if=Type postgres"`
+	PostgresPassword string                      `env:"DB_POSTGRES_PASSWORD"               validate:"required_if=Type postgres"`
 }
 
 type Lock struct {
 	RedisEnabled        bool          `env:"LOCK_REDIS_ENABLED,default=false"`
-	RedisHost           string        `env:"LOCK_REDIS_HOST,default=localhost" validate:"required_if=RedisEnabled true"`
-	RedisPort           int           `env:"LOCK_REDIS_PORT,default=6379" validate:"required_if=RedisEnabled true,numeric,gte=1"`
-	RedisDbName         int           `env:"LOCK_REDIS_DB_NAME,default=0" validate:"numeric,gte=0"`
+	RedisHost           string        `env:"LOCK_REDIS_HOST,default=localhost"        validate:"required_if=RedisEnabled true"`
+	RedisPort           int           `env:"LOCK_REDIS_PORT,default=6379"             validate:"required_if=RedisEnabled true,numeric,gte=1"`
+	RedisDbName         int           `env:"LOCK_REDIS_DB_NAME,default=0"             validate:"numeric,gte=0"`
 	RedisUsername       string        `env:"LOCK_REDIS_USERNAME"`
 	RedisPassword       string        `env:"LOCK_REDIS_PASSWORD"`
-	RedisTaskTries      int           `env:"LOCK_REDIS_TASK_LOCK_TRIES,default=1" validate:"required_if=RedisEnabled true,numeric,gte=1"`
+	RedisTaskTries      int           `env:"LOCK_REDIS_TASK_LOCK_TRIES,default=1"     validate:"required_if=RedisEnabled true,numeric,gte=1"`
 	RedisTaskLockAtMost time.Duration `env:"LOCK_REDIS_TASK_LOCK_AT_MOST,default=30s" validate:"required_if=RedisEnabled true,gte=0"`
-	RedisTaskRetryDelay time.Duration `env:"LOCK_REDIS_TASK_RETRY_DELAY,default=5s" validate:"required_if=RedisEnabled true,gte=0"`
+	RedisTaskRetryDelay time.Duration `env:"LOCK_REDIS_TASK_RETRY_DELAY,default=5s"   validate:"required_if=RedisEnabled true,gte=0"`
 	RedisUrl            string
 }
 
 type Prometheus struct {
 	Enabled            bool          `env:"PROMETHEUS_ENABLED,default=true"`
-	Port               int           `env:"PROMETHEUS_PORT,default=8080" validate:"required_if=Enabled true,gte=1"`
+	Port               int           `env:"PROMETHEUS_PORT,default=8080"                  validate:"required_if=Enabled true,gte=1"`
 	Listen             string        `env:"PROMETHEUS_LISTEN"`
-	BasePath           string        `env:"PROMETHEUS_BASE_PATH,default=/" validate:"required_if=Enabled true"`
-	Path               string        `env:"PROMETHEUS_METRICS_PATH,default=/metrics" validate:"required_if=Enabled true"`
+	BasePath           string        `env:"PROMETHEUS_BASE_PATH,default=/"                validate:"required_if=Enabled true"`
+	Path               string        `env:"PROMETHEUS_METRICS_PATH,default=/metrics"      validate:"required_if=Enabled true"`
 	SecureTokenEnabled bool          `env:"PROMETHEUS_SECURE_TOKEN_ENABLED,default=false"`
-	SecureToken        string        `env:"PROMETHEUS_SECURE_TOKEN" validate:"required_if=Enabled true SecureTokenEnabled true"`
-	RefreshInterval    time.Duration `env:"PROMETHEUS_REFRESH_INTERVAL,default=30s" validate:"required,gte=0"`
+	SecureToken        string        `env:"PROMETHEUS_SECURE_TOKEN"                       validate:"required_if=Enabled true SecureTokenEnabled true"`
+	RefreshInterval    time.Duration `env:"PROMETHEUS_REFRESH_INTERVAL,default=30s"       validate:"required,gte=0"`
 }
 
 type Configuration struct {
@@ -198,7 +200,7 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 			log.Fatal().Msgf("Could not retrieve database: %v", err)
 		}
 
-		if err = sqlDb.Ping(); err != nil {
+		if err = sqlDb.PingContext(context.Background()); err != nil {
 			log.Fatal().Msgf("Could not connect to database: %v", err)
 		}
 
@@ -299,7 +301,6 @@ func configureLogger(cfg *Logging) {
 
 	if constant.ConfigLogEncodingJson == cfg.Encoding {
 		log.Logger = zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
-
 	} else {
 		log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: zerolog.TimeFieldFormat, NoColor: !cfg.EncodingColorize}).With().Timestamp().Caller().Logger()
 	}

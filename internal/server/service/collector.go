@@ -5,6 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
+	"strconv"
+	"strings"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/float"
 	jsoninternal "git.myservermanager.com/varakh/ecolinker/internal/json"
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
@@ -17,11 +23,6 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"maps"
-	"slices"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type CollectorService struct {
@@ -108,7 +109,7 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 	case constant.CollectorKindDeviceParameters:
 		parameters, ok := payload[parametersPayloadKey].([]interface{})
 		if !ok {
-			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey])))
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey]))
 		}
 		if parameters == nil {
 			return nil, service_error.ErrValidationNotEmpty
@@ -116,14 +117,14 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 
 		actualParams, ok := str.ToSlice(parameters)
 		if !ok {
-			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("not all values for 'parameters' have correct type for collector type '%s'", constant.CollectorKindDeviceParameters)))
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("not all values for 'parameters' have correct type for collector type '%s'", constant.CollectorKindDeviceParameters))
 		}
 
 		p = dto.CollectorEcoFlowHttpDeviceParameterPayload{Parameters: actualParams}
 	case constant.CollectorKindDeviceHistoricalData:
 		rangePayload, ok := payload[stepPayloadKey].(string)
 		if !ok {
-			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'range' is required for collector type '%s', got %T", constant.CollectorKindDeviceHistoricalData, payload[stepPayloadKey])))
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'range' is required for collector type '%s', got %T", constant.CollectorKindDeviceHistoricalData, payload[stepPayloadKey]))
 		}
 		if _, parseErr := constant.ParseHistoricalDataStep(rangePayload); parseErr != nil {
 			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'range' has wrong type: '%w'", parseErr))
@@ -170,7 +171,7 @@ func (s *CollectorService) Update(id string, deviceSN string, kind constant.Coll
 	case constant.CollectorKindDeviceParameters:
 		parameters, ok := payload[parametersPayloadKey].([]string)
 		if !ok {
-			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey])))
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'parameters' are required for collector type '%s', got %T", constant.CollectorKindDeviceParameters, payload[parametersPayloadKey]))
 		}
 		if parameters == nil {
 			return nil, service_error.ErrValidationNotEmpty
@@ -179,7 +180,7 @@ func (s *CollectorService) Update(id string, deviceSN string, kind constant.Coll
 	case constant.CollectorKindDeviceHistoricalData:
 		step, ok := payload[stepPayloadKey].(string)
 		if !ok {
-			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, errors.New(fmt.Sprintf("'range' is required for collector type '%s', got %T", constant.CollectorKindDeviceHistoricalData, payload[stepPayloadKey])))
+			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'range' is required for collector type '%s', got %T", constant.CollectorKindDeviceHistoricalData, payload[stepPayloadKey]))
 		}
 		if _, parseErr := constant.ParseHistoricalDataStep(step); parseErr != nil {
 			return nil, service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("'range' has wrong type: '%w'", parseErr))
@@ -266,7 +267,7 @@ func (s *CollectorService) start(c *model.Collector) error {
 }
 
 // run runs a collector
-func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
+func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //nolint:gocyclo // inherent complexity of collector kind dispatch
 	received := float64(time.Now().Unix())
 
 	var err error
@@ -411,7 +412,8 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 
 			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
-			metricLabelKeys := []string{"collector", "device"}
+			metricLabelKeys := make([]string, 0, 2+len(valueMap.Indices))
+			metricLabelKeys = append(metricLabelKeys, "collector", "device")
 			metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)
 			metricLabelValues := []string{c.ID.String(), c.DeviceSN}
 
@@ -431,8 +433,6 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 				continue
 			}
 		}
-
-		break
 	default:
 		log.Error().Msgf("No collector kind '%s' found", c.Kind)
 		s.taskService.CancelByTag(s.runIdentifier(c.ID))
@@ -442,5 +442,5 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) {
 
 // runIdentifier returns identifier for runs
 func (s *CollectorService) runIdentifier(id uuid.UUID) string {
-	return fmt.Sprintf("COLLECTOR-%s", id.String())
+	return "COLLECTOR-" + id.String()
 }

@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	golog "log"
+	"os"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server"
 	"git.myservermanager.com/varakh/ecolinker/internal/terminal"
 	"github.com/urfave/cli/v3"
-	golog "log"
-	"os"
 )
 
 func main() {
@@ -74,8 +75,8 @@ var serveCmd = &cli.Command{
 	Name:  "serve",
 	Usage: "Starts the server and keeps it running",
 	Action: func(ctx context.Context, _ *cli.Command) error {
-		server := server.New(&ctx)
-		server.Start()
+		server := server.New()
+		server.Start(ctx)
 		return nil
 	},
 }

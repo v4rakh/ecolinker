@@ -1,10 +1,11 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
-	"time"
 )
 
 // Device entity holding information for devices

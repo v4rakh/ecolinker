@@ -46,7 +46,6 @@ func (s *EcoFlowMqttTask) Subscribe(deviceSN string, topicKind constant.TopicKin
 				log.Error().Msgf("Device '%s' unable to subscribe to topic '%s' of EcoFlow MQTT: %v", deviceSN, topicKind.String(), err)
 				return
 			}
-			break
 		}
 	}
 

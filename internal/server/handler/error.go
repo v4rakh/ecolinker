@@ -3,13 +3,14 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
 	httpcommons "git.myservermanager.com/varakh/ecolinker/internal/http"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/validate"
 	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"net/http"
 )
 
 func AbortWithValidatorPayload(c *gin.Context, err error) {
@@ -25,26 +26,26 @@ func AbortWithValidatorPayload(c *gin.Context, err error) {
 	resErr := service_error.NewServiceError(service_error.ErrCodeIllegalArgument, fmt.Errorf("validation error: %v (%w)", str.ValuesString(errorMap), err))
 	c.Header(httpcommons.HeaderContentType, httpcommons.HeaderContentTypeApplicationJson)
 	_ = c.AbortWithError(http.StatusBadRequest, resErr)
-	return
 }
 
 func ToHttpStatus(err error) int {
 	var e *service_error.ServiceError
 	switch {
 	case errors.As(err, &e):
-		if e.Status == service_error.ErrCodeIllegalArgument {
+		switch e.Status {
+		case service_error.ErrCodeIllegalArgument:
 			return http.StatusBadRequest
-		} else if e.Status == service_error.ErrCodeUnauthorized {
+		case service_error.ErrCodeUnauthorized:
 			return http.StatusUnauthorized
-		} else if e.Status == service_error.ErrCodeForbidden {
+		case service_error.ErrCodeForbidden:
 			return http.StatusForbidden
-		} else if e.Status == service_error.ErrCodeNotFound {
+		case service_error.ErrCodeNotFound:
 			return http.StatusNotFound
-		} else if e.Status == service_error.ErrCodeMethodNotAllowed {
+		case service_error.ErrCodeMethodNotAllowed:
 			return http.StatusMethodNotAllowed
-		} else if e.Status == service_error.ErrCodeConflict {
+		case service_error.ErrCodeConflict:
 			return http.StatusConflict
-		} else if e.Status == service_error.ErrCodeGeneral {
+		case service_error.ErrCodeGeneral:
 			return http.StatusInternalServerError
 		}
 	default:

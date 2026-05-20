@@ -3,6 +3,7 @@ package validate
 import (
 	"errors"
 	"fmt"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
 	"git.myservermanager.com/varakh/ecolinker/internal/str"
 	"github.com/go-playground/validator/v10"
@@ -70,7 +71,7 @@ func ErrorToText(e *validator.FieldError) (string, string) {
 
 	switch x.Tag() {
 	case "required":
-		return x.Field(), fmt.Sprintf("%s is required", x.Field())
+		return x.Field(), x.Field() + " is required"
 	case "max":
 		return x.Field(), fmt.Sprintf("%s cannot be longer than %s", x.Field(), x.Param())
 	case "min":
@@ -78,7 +79,7 @@ func ErrorToText(e *validator.FieldError) (string, string) {
 	case "len":
 		return x.Field(), fmt.Sprintf("%s must be %s characters long", x.Field(), x.Param())
 	case "uuid4":
-		return x.Field(), fmt.Sprintf("%s must a valid uuidv4", x.Field())
+		return x.Field(), x.Field() + " must a valid uuidv4"
 	}
-	return x.Field(), fmt.Sprintf("%s is not valid", x.Field())
+	return x.Field(), x.Field() + " is not valid"
 }

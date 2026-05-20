@@ -58,9 +58,7 @@ func (r *DeviceDbRepo) Create(sn string, kind string, label string) (*model.Devi
 		return nil, service_error.ErrValidationNotBlank
 	}
 
-	var e *model.Device
-
-	e = &model.Device{
+	var e = &model.Device{
 		SN:    sn,
 		Kind:  kind,
 		Label: label,

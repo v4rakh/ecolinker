@@ -2,15 +2,16 @@ package service
 
 import (
 	"fmt"
+	"time"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/meta"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/config"
 	"git.myservermanager.com/varakh/ecolinker/internal/service_error"
-	"github.com/go-co-op/gocron-redis-lock/v2"
+	redislock "github.com/go-co-op/gocron-redis-lock/v2"
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
-	"time"
 )
 
 type TaskService struct {
@@ -48,7 +49,7 @@ func NewTaskService(l LockService, ac *config.App, lc *config.Lock) (*TaskServic
 		log.Info().Msg("Initializing REDIS task service")
 
 		var c *redis.Client
-		if c, err = config.NewRedisClient(fmt.Sprintf("%s-task", meta.Name), lc.RedisUrl); err != nil {
+		if c, err = config.NewRedisClient(meta.Name+"-task", lc.RedisUrl); err != nil {
 			return nil, fmt.Errorf("task service: cannot initialize REDIS client: %w", err)
 		}
 
@@ -90,7 +91,8 @@ func (s *TaskService) Stop() {
 
 // EnqueueOnce enqueues a new job once for execution, convenience method for gocron.WithLimitedRuns, see https://github.com/go-co-op/gocron/issues/709
 func (s *TaskService) EnqueueOnce(job gocron.JobDefinition, task gocron.Task, name string, options ...gocron.JobOption) (gocron.Job, error) {
-	jobOptions := []gocron.JobOption{gocron.WithLimitedRuns(1)}
+	jobOptions := make([]gocron.JobOption, 0, 1+len(options))
+	jobOptions = append(jobOptions, gocron.WithLimitedRuns(1))
 	jobOptions = append(jobOptions, options...)
 	return s.Enqueue(job, task, name, jobOptions...)
 }
@@ -100,7 +102,8 @@ func (s *TaskService) Enqueue(job gocron.JobDefinition, task gocron.Task, name s
 	if name == "" {
 		return nil, service_error.ErrValidationNotBlank
 	}
-	jobOptions := []gocron.JobOption{gocron.WithName(name)}
+	jobOptions := make([]gocron.JobOption, 0, 1+len(options))
+	jobOptions = append(jobOptions, gocron.WithName(name))
 	jobOptions = append(jobOptions, options...)
 	return s.scheduler.NewJob(job, task, jobOptions...)
 }

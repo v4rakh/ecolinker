@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+
 	"git.myservermanager.com/varakh/ecolinker/internal/server/constant"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/model"
 	"git.myservermanager.com/varakh/ecolinker/internal/server/repository"
@@ -46,7 +47,7 @@ func (s *DeviceService) Create(sn string, kind constant.DeviceKind, label string
 	var e *model.Device
 	var err error
 
-	e, err = s.repo.FindBySN(sn)
+	_, err = s.repo.FindBySN(sn)
 
 	if err != nil && !errors.Is(err, service_error.ErrResourceNotFound) {
 		return nil, err
@@ -71,7 +72,7 @@ func (s *DeviceService) Update(sn string, kind constant.DeviceKind, label string
 	var e *model.Device
 	var err error
 
-	if e, err = s.Get(sn); err != nil {
+	if _, err = s.Get(sn); err != nil {
 		return nil, err
 	}
 

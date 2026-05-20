@@ -9,7 +9,7 @@ import (
 var (
 	ErrValidationNotEmpty           = NewServiceError(ErrCodeIllegalArgument, errors.New("assert: empty values are not allowed"))
 	ErrValidationNotBlank           = NewServiceError(ErrCodeIllegalArgument, errors.New("assert: blank values are not allowed"))
-	ErrValidationTimeFormatDateTime = NewServiceError(ErrCodeIllegalArgument, errors.New(fmt.Sprintf("assert: not a valid time, expecting format '%s'", time.DateTime)))
+	ErrValidationTimeFormatDateTime = NewServiceError(ErrCodeIllegalArgument, fmt.Errorf("assert: not a valid time, expecting format '%s'", time.DateTime))
 	ErrResourceNotFound             = NewServiceError(ErrCodeNotFound, errors.New("resource not found"))
 	ErrResourceConflict             = NewServiceError(ErrCodeConflict, errors.New("resource already exists"))
 	ErrDatabaseRowsExpected         = NewServiceDatabaseError(errors.New("action failed, expected affected rows, but got none"))
@@ -33,8 +33,8 @@ func NewServiceError(status ErrorCode, err error) error {
 }
 
 // NewServiceDatabaseError returns an error that formats as the given text and aligns with builtin error
-func NewServiceDatabaseError(error error) error {
-	return NewServiceError(ErrCodeGeneral, fmt.Errorf("database error: %w", error))
+func NewServiceDatabaseError(err error) error {
+	return NewServiceError(ErrCodeGeneral, fmt.Errorf("database error: %w", err))
 }
 
 type ServiceError struct {
