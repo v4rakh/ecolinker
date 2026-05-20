@@ -7,7 +7,6 @@ CMD_GO_FILES ?= ./cmd/ecolinker/main.go
 
 export GO111MODULE=on
 
-GOSEC ?= gosec
 GRYPE ?= grype
 
 BIN_DIR = $(shell pwd)/bin
@@ -22,7 +21,10 @@ dependencies:
 	$(GO) mod download
 
 checkstyle:
-	$(GO) vet ./...
+	golangci-lint run
+
+checkstyle-fix:
+	golangci-lint run --fix
 
 generate:
 	$(GO) generate ./...
@@ -43,9 +45,6 @@ test-coverage:
 
 run:
 	$(GO) run ${CMD_GO_FILES} server serve
-
-audit:
-	$(GOSEC) -quiet -sort -severity medium -confidence high ./...
 
 scan:
 	@NO_COLOR=1 $(GRYPE) -v -o table --file bin/grype.txt --fail-on critical bin/ || true
@@ -75,4 +74,4 @@ build-windows-amd64:
 build-windows-arm64:
 	GOOS=windows GOARCH=arm64 $(GO) build -o ${BIN_DIR}/ecolinker-windows-arm64 ${CMD_GO_FILES}
 
-.PHONY: clean dependencies generate build build-local build-all build-darwin-amd64 build-darwin-arm64 build-freebsd-amd64 build-freebsd-arm64 build-linux-amd64 build-linux-arm64 build-windows-amd64 build-windows-arm64 checkstyle audit scan test test-coverage run
+.PHONY: clean dependencies generate build build-local build-all build-darwin-amd64 build-darwin-arm64 build-freebsd-amd64 build-freebsd-arm64 build-linux-amd64 build-linux-arm64 build-windows-amd64 build-windows-arm64 checkstyle checkstyle-fix scan test test-coverage run

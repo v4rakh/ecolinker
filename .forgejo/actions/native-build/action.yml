@@ -6,7 +6,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Native - checkstyle, audit, build
+    - name: Native - checkstyle, build
       shell: bash
       run: |
-        make clean dependencies checkstyle audit build
+        make clean dependencies checkstyle build
