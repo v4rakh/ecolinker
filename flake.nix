@@ -12,7 +12,6 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
-        "aarch64-darwin"
       ];
 
       perSystem =
@@ -28,7 +27,7 @@
               pwd = ./.;
               src = ./.;
               env.CGO_ENABLED = 0;
-              vendorHash = "sha256-igDXX5B+Cc2ykrUPmYbnBeheXzaLzagvfsjeWk6lbYg=";
+              vendorHash = "sha256-ndJMpi9hX+Tq7cfrqlJUJ0mJxv6ACIrBXCUDfYcolcg=";
             };
           };
         };
