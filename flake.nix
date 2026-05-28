@@ -3,28 +3,34 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    systems.url = "github:nix-systems/default";
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.systems.follows = "systems";
-    };
+    flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
-  outputs = { nixpkgs, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        version = "0.4.1";
-      in {
-        packages = {
-          default = pkgs.buildGoModule {
-            pname = "ecolinker";
-            version = version;
-            pwd = ./.;
-            src = ./.;
-            env.CGO_ENABLED = 0;
-            vendorHash = "sha256-HHaTnDNMxwjxqqQhLc/IdtNvr+ZErLN/xgrsFjHaYVA=";
+  outputs =
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+
+      perSystem =
+        { pkgs, ... }:
+        let
+          version = "0.4.1";
+        in
+        {
+          packages = {
+            default = pkgs.buildGoModule {
+              pname = "ecolinker";
+              version = version;
+              pwd = ./.;
+              src = ./.;
+              env.CGO_ENABLED = 0;
+              vendorHash = "sha256-igDXX5B+Cc2ykrUPmYbnBeheXzaLzagvfsjeWk6lbYg=";
+            };
           };
         };
-      });
+    };
 }
