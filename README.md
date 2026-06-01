@@ -753,7 +753,7 @@ Major updates undergo manual review.
     * Adjust and align versions
         * `flake.nix`: `version`
         * `internal/meta/pkg.go`: `Version`
-    * Make sure `make clean dependencies checkstyle audit build-all test-coverage` is fine
+    * Make sure `make clean dependencies checkstyle build-all test-coverage` is fine
     * Make sure `nix build` is fine (you need `nix` for it, update checksums in `flake.nix` if it fails)
       ```shell
       nix build .#packages.x86_64-linux.default -L

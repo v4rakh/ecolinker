@@ -6,7 +6,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Native - checkstyle, build
+    - name: Native - checkstyle, build, test
       shell: bash
       run: |
-        make clean dependencies checkstyle build
+        nix develop --command bash -c "make clean dependencies checkstyle build-all test-coverage"

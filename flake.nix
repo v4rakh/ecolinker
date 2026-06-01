@@ -26,9 +26,18 @@
               version = version;
               pwd = ./.;
               src = ./.;
-              env.CGO_ENABLED = 0;
-              vendorHash = "sha256-ndJMpi9hX+Tq7cfrqlJUJ0mJxv6ACIrBXCUDfYcolcg=";
+              doCheck = false;
+              vendorHash = "";
             };
+          };
+
+          devShells.default = pkgs.mkShell {
+            packages = with pkgs; [
+              git-cliff
+              gnumake
+              go
+              grype
+            ];
           };
         };
     };

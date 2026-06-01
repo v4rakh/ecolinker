@@ -17,8 +17,6 @@ jobs:
           version: ${{ inputs.version }}
       - uses: ./.forgejo/actions/native-scan
         name: Native - scan
-      - uses: ./.forgejo/actions/native-test
-        name: Native - test
       - uses: ./.forgejo/actions/oci-prepare
         name: OCI - prepare
       - uses: ./.forgejo/actions/oci-release
