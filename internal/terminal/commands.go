@@ -62,6 +62,9 @@ const (
 
 	collectorAddRequestPayloadParameters = "parameters"
 	collectorAddRequestPayloadStep       = "step"
+
+	cmdNameAdd     = "add"
+	cmdArgsUsageID = "<id>"
 )
 
 var (
@@ -305,7 +308,7 @@ var (
 		Action: devicesList,
 	}
 	DevicesAddCmd = &cli.Command{
-		Name:  "add",
+		Name:  cmdNameAdd,
 		Usage: "Adds a device which enables you to listen for MQTT messages from EcoFlow",
 		Flags: []cli.Flag{
 			configPathFlag,
@@ -348,7 +351,7 @@ var (
 		Action: subsList,
 	}
 	SubsAddCmd = &cli.Command{
-		Name:  "add",
+		Name:  cmdNameAdd,
 		Usage: "Adds a subscription for a tracked device",
 		Flags: []cli.Flag{
 			configPathFlag,
@@ -373,7 +376,7 @@ var (
 			timeoutFlag,
 			printRawFlag,
 		},
-		ArgsUsage: "<id>",
+		ArgsUsage: cmdArgsUsageID,
 		Action:    subsRemove,
 	}
 	CollectorsListCmd = &cli.Command{
@@ -390,7 +393,7 @@ var (
 		Action: collectorsList,
 	}
 	CollectorsAddCmd = &cli.Command{
-		Name:  "add",
+		Name:  cmdNameAdd,
 		Usage: "Adds a collector for a tracked device",
 		Commands: []*cli.Command{
 			{
@@ -438,7 +441,7 @@ var (
 			timeoutFlag,
 			printRawFlag,
 		},
-		ArgsUsage: "<id>",
+		ArgsUsage: cmdArgsUsageID,
 		Action:    collectorsRemove,
 	}
 	CollectorsInvokeCmd = &cli.Command{
@@ -452,7 +455,7 @@ var (
 			timeoutFlag,
 			printRawFlag,
 		},
-		ArgsUsage: "<id>",
+		ArgsUsage: cmdArgsUsageID,
 		Action:    collectorsInvoke,
 	}
 )

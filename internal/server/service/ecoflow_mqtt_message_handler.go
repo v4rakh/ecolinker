@@ -51,7 +51,7 @@ func (h *EcoFlowMqttMessageHandler) HandleMessage(_ mqtt.Client, message mqtt.Me
 func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 	received := float64(time.Now().Unix())
 
-	generalMetricLabels := []string{"device", "topicKind"}
+	generalMetricLabels := []string{metricLabelDevice, "topicKind"}
 	genericMetricLabelValues := []string{h.DeviceSN, h.TopicKind.String()}
 
 	if promErr := h.prometheusService.RegisterCounter(constant.MetricEcoFlowMqttMessagesReceived, constant.MetricEcoFlowMqttMessagesReceivedHelp, generalMetricLabels); promErr != nil {
@@ -134,7 +134,7 @@ func (h *EcoFlowMqttMessageHandler) processMessage(message mqtt.Message) {
 		metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
 		metricLabelKeys := make([]string, 0, 1+len(valueMap.Indices))
-		metricLabelKeys = append(metricLabelKeys, "device")
+		metricLabelKeys = append(metricLabelKeys, metricLabelDevice)
 		metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)
 
 		metricLabelValues := []string{h.DeviceSN}

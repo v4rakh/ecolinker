@@ -25,6 +25,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const metricLabelDevice = "device"
+
 type CollectorService struct {
 	ecoFlowHttpService *EcoFlowHttpService
 	mqttForwardService *MqttForwardService
@@ -277,7 +279,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 		return
 	}
 
-	generalMetricLabels := []string{"device", "kind", "id"}
+	generalMetricLabels := []string{metricLabelDevice, "kind", "id"}
 	genericMetricLabelValues := []string{c.DeviceSN, c.Kind, c.ID.String()}
 
 	if promErr := s.prometheusService.RegisterCounter(constant.MetricCollectorInvocations, constant.MetricCollectorInvocationsHelp, generalMetricLabels); promErr != nil {
@@ -360,7 +362,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 
 			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), "historical_data")
 
-			metricLabelKeys := []string{"collector", "device", "attribute", "unit", "start", "end"}
+			metricLabelKeys := []string{"collector", metricLabelDevice, "attribute", "unit", "start", "end"}
 			metricLabelValues := []string{c.ID.String(), c.DeviceSN, d.IndexName, d.Unit, beginTime.Format(time.DateTime), endTime.Format(time.DateTime)}
 
 			if promErr := s.prometheusService.RegisterGauge(metricKey, metricHelp, metricLabelKeys); promErr != nil {
@@ -413,7 +415,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 			metricKey := fmt.Sprintf("%s_%s", strings.ToLower(meta.Name), valueMap.Key)
 
 			metricLabelKeys := make([]string, 0, 2+len(valueMap.Indices))
-			metricLabelKeys = append(metricLabelKeys, "collector", "device")
+			metricLabelKeys = append(metricLabelKeys, "collector", metricLabelDevice)
 			metricLabelKeys = append(metricLabelKeys, slices.Collect(maps.Keys(valueMap.Indices))...)
 			metricLabelValues := []string{c.ID.String(), c.DeviceSN}
 
