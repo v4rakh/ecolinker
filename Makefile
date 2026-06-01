@@ -21,9 +21,11 @@ dependencies:
 	$(GO) mod download
 
 checkstyle:
+	golangci-lint cache clean
 	golangci-lint run
 
 checkstyle-fix:
+	golangci-lint cache clean
 	golangci-lint run --fix
 
 generate:
