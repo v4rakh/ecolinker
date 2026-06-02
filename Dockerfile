@@ -14,7 +14,7 @@ RUN go mod download
 
 # Copy source
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -tags prod -ldflags="-s -w" -o /ecolinker ./cmd/ecolinker
+RUN CGO_ENABLED=0 GOOS=linux go build -tags prod -trimpath -ldflags="-s -w" -o /ecolinker ./cmd/ecolinker
 
 #
 # Actual image

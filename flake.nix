@@ -27,7 +27,11 @@
               pwd = ./.;
               src = ./.;
               doCheck = false;
-              vendorHash = "";
+              vendorHash = "sha256-Z5qoRFnIzkhlCucceXYpJYMFtjqkDFKigGAwn9yehkc=";
+              ldflags = [
+                "-s"
+                "-w"
+              ];
             };
           };
 
