@@ -475,7 +475,7 @@ services.ecolinker = {
     # ...
   };
   environmentFiles = [
-    # ..., e.g., config.sops.upda-env.path
+    # ..., e.g., config.sops.ecolinker-env.path
   ];
 };
 ```
