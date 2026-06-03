@@ -480,7 +480,7 @@ services.ecolinker = {
 };
 ```
 
-There's a Home Maanger module which you can use. For available properties, see `nix/hm-module.nix`. Here's a minimal example:
+There's a Home Manger module which you can use. For available properties, see `nix/hm-module.nix`. Here's a minimal example:
 
 ```nix
 programs.ecolinker = {
