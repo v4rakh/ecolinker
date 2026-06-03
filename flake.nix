@@ -7,7 +7,12 @@
   };
 
   outputs =
-    inputs@{ flake-parts, ... }:
+    inputs@{
+      flake-parts,
+      nixpkgs,
+      self,
+      ...
+    }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = [
         "x86_64-linux"
@@ -45,5 +50,17 @@
             ];
           };
         };
+
+      flake = {
+        nixosModules.default = import ./nix/module.nix {
+          inherit self;
+          lib = nixpkgs.lib;
+        };
+
+        homeManagerModules.default = import ./nix/hm-module.nix {
+          inherit self;
+          lib = nixpkgs.lib;
+        };
+      };
     };
 }

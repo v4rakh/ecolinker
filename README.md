@@ -466,6 +466,37 @@ Add EcoLinker as **Nix flakes** input:
 }
 ```
 
+There's a NixOS module which you can use. For available properties, see `nix/module.nix`. Here's a minimal example:
+
+```nix
+services.ecolinker = {
+  enable = true;
+  environment = {
+    # ...
+  };
+  environmentFiles = [
+    # ..., e.g., config.sops.upda-env.path
+  ];
+};
+```
+
+There's a Home Maanger module which you can use. For available properties, see `nix/hm-module.nix`. Here's a minimal example:
+
+```nix
+programs.ecolinker = {
+  enable = true;
+  settings = {
+    server.url = "http://192.168.1.2:8181";
+    auth = {
+      user = "administrator";
+      passwordFile = config.sops.secrets.ecolinker-password.path;
+    };
+    device.serialNumber = "xxx";
+    parsing.raw = false;
+  };
+};
+```
+
 ### Prometheus
 
 Metrics are exposed with [prometheus](https://prometheus.io), so that you can easily build a
