@@ -1,11 +1,10 @@
-//go:build !integration
-
 package tm
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTimePairsAssertNil(t *testing.T) {

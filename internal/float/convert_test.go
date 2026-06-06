@@ -1,10 +1,9 @@
-//go:build !integration
-
 package float
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertFloat(t *testing.T) {

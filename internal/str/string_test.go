@@ -1,10 +1,9 @@
-//go:build !integration
-
 package str
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractValuesFromString(t *testing.T) {
