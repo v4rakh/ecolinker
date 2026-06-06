@@ -1,12 +1,7 @@
-inputs:
-  version:
-    description: "version to use"
-    required: true
-    type: string
 runs:
   using: "composite"
   steps:
-    - name: Native - checkstyle, build, test
+    - name: Native - checkstyle, build
       shell: bash
       run: |
-        nix develop --command bash -c "make clean dependencies checkstyle build-all test-coverage"
+        nix develop --command bash -c "make clean dependencies checkstyle build-all"

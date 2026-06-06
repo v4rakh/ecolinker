@@ -13,8 +13,6 @@ jobs:
         name: Checkout
       - uses: ./.forgejo/actions/native-build
         name: Native - build
-        with:
-          version: ${{ inputs.version }}
       - uses: ./.forgejo/actions/native-scan
         name: Native - scan
       - uses: ./.forgejo/actions/oci-prepare
