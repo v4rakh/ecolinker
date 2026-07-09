@@ -160,10 +160,10 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 	// load configuration and validate from environment
 	var c Configuration
 	if err = envconfig.Process(ctx, &c); err != nil {
-		log.Fatal().Msgf("Cannot load configuration from environment. Reason: %v", err)
+		log.Fatal().Err(err).Msg("Cannot load configuration from environment")
 	}
 	if err = validate.ValidOrError(c); err != nil {
-		log.Fatal().Msgf("Cannot validate configuration. Reason: %s", err.Error())
+		log.Fatal().Err(err).Msg("Cannot validate configuration")
 	}
 
 	var db *gorm.DB
@@ -192,29 +192,29 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 		)
 
 		if db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: gormLog}); err != nil {
-			log.Fatal().Msgf("Could not setup database: %v", err)
+			log.Fatal().Err(err).Msg("Could not setup database")
 		}
 
 		var sqlDb *sql.DB
 		if sqlDb, err = db.DB(); err != nil {
-			log.Fatal().Msgf("Could not retrieve database: %v", err)
+			log.Fatal().Err(err).Msg("Could not retrieve database")
 		}
 
 		if err = sqlDb.PingContext(context.Background()); err != nil {
-			log.Fatal().Msgf("Could not connect to database: %v", err)
+			log.Fatal().Err(err).Msg("Could not connect to database")
 		}
 
 		if migrationDriver, err = migratepostgres.WithInstance(sqlDb, &migratepostgres.Config{}); err != nil {
-			log.Fatal().Msgf("Could not create migration driver: %v", err)
+			log.Fatal().Err(err).Msg("Could not create migration driver")
 		}
 
 		if migrationFS, err = iofs.New(migrationPostgresFS, "migrations_postgres"); err != nil {
-			log.Fatal().Msgf("Could not create migration source: %v", err)
+			log.Fatal().Err(err).Msg("Could not create migration source")
 		}
 	}
 
 	if db == nil {
-		log.Fatal().Msgf("Could not setup database")
+		log.Fatal().Msg("Could not setup database")
 	}
 
 	if !c.Database.MigrationEnabled {
@@ -222,31 +222,31 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 	} else {
 		var migrator *migrate.Migrate
 		if migrator, err = migrate.NewWithInstance("iofs", migrationFS, migrationDatabaseName, migrationDriver); err != nil {
-			log.Fatal().Msgf("Could not create database migration instance: %v", err)
+			log.Fatal().Err(err).Msg("Could not create database migration instance")
 		}
 
 		var migrationVersion uint
 		var migrationVersionDirty bool
 		if migrationVersion, migrationVersionDirty, err = migrator.Version(); err != nil {
 			if errors.Is(err, migrate.ErrNilVersion) {
-				log.Info().Msgf("Database migration schema is uninitialized")
+				log.Info().Msg("Database migration schema is uninitialized")
 			} else {
-				log.Fatal().Msgf("Could not retrieve database migration version: %v", err)
+				log.Fatal().Err(err).Msg("Could not retrieve database migration version")
 			}
 		} else {
 			log.Info().Msgf("Previous database migration version is '%d' (dirty '%v')", migrationVersion, migrationVersionDirty)
 		}
 
-		log.Info().Msgf("Applying necessary database migration steps...")
+		log.Info().Msg("Applying necessary database migration steps...")
 		if err = migrator.Up(); err != nil {
 			if errors.Is(err, migrate.ErrNoChange) {
-				log.Info().Msgf("No database schema changes detected")
+				log.Info().Msg("No database schema changes detected")
 			} else {
-				log.Fatal().Msgf("Could not migrate database schema: %v", err)
+				log.Fatal().Err(err).Msg("Could not migrate database schema")
 			}
 		}
 
-		log.Info().Msgf("Applied all necessary database migration steps successfully")
+		log.Info().Msg("Applied all necessary database migration steps successfully")
 	}
 
 	// custom defaults and validation
@@ -259,14 +259,14 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 	}
 
 	log.Info().Msgf("Configuration: App %+v", c.App)
-	log.Info().Msgf("Configuration: Auth ***REDACTED***")
+	log.Info().Msg("Configuration: Auth ***REDACTED***")
 	log.Info().Msgf("Configuration: Cors %+v", c.Cors)
-	log.Info().Msgf("Configuration: Database ***REDACTED***")
-	log.Info().Msgf("Configuration: EcoFlow ***REDACTED***")
-	log.Info().Msgf("Configuration: Lock ***REDACTED***")
+	log.Info().Msg("Configuration: Database ***REDACTED***")
+	log.Info().Msg("Configuration: EcoFlow ***REDACTED***")
+	log.Info().Msg("Configuration: Lock ***REDACTED***")
 	log.Info().Msgf("Configuration: Logging %+v", lc)
-	log.Info().Msgf("Configuration: Prometheus ***REDACTED***")
-	log.Info().Msgf("Configuration: MqttForward ***REDACTED***")
+	log.Info().Msg("Configuration: Prometheus ***REDACTED***")
+	log.Info().Msg("Configuration: MqttForward ***REDACTED***")
 	log.Info().Msgf("Configuration: Server %+v", c.Server)
 
 	return &c, db

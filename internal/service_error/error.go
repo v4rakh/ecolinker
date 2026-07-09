@@ -17,6 +17,10 @@ var (
 
 type ErrorCode string
 
+func (e ErrorCode) String() string {
+	return string(e)
+}
+
 const (
 	ErrCodeIllegalArgument  ErrorCode = "IllegalArgument"
 	ErrCodeUnauthorized     ErrorCode = "Unauthorized"

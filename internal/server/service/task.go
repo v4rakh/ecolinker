@@ -32,7 +32,7 @@ func NewTaskService(l LockService, ac *config.App, lc *config.Lock) (*TaskServic
 	// global job options
 	singletonModeOption := gocron.WithSingletonMode(gocron.LimitModeReschedule)
 	errorEventListener := gocron.AfterJobRunsWithError(func(jobID uuid.UUID, jobName string, err error) {
-		log.Error().Msgf("Job '%s' (%v) had a panic %v", jobName, jobID, err)
+		log.Error().Err(err).Msgf("Job '%s' (%v) failed", jobName, jobID)
 	})
 	successEventListener := gocron.AfterJobRuns(func(jobID uuid.UUID, jobName string) {
 		log.Debug().Msgf("Job '%s' (%v) finished", jobName, jobID)
@@ -81,10 +81,10 @@ func (s *TaskService) Start() {
 func (s *TaskService) Stop() {
 	log.Info().Msgf("Stopping %d periodic tasks...", len(s.scheduler.Jobs()))
 	if err := s.scheduler.StopJobs(); err != nil {
-		log.Warn().Msgf("Cannot stop periodic tasks. Reason: %v", err)
+		log.Warn().Err(err).Msg("Cannot stop periodic tasks")
 	}
 	if err := s.scheduler.Shutdown(); err != nil {
-		log.Warn().Msgf("Cannot shut down scheduler. Reason: %v", err)
+		log.Warn().Err(err).Msg("Cannot shut down scheduler")
 	}
 	log.Info().Msg("Stopped all periodic tasks")
 }

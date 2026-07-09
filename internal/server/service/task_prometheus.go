@@ -56,18 +56,18 @@ func (s *PrometheusTask) configurePrometheusRefreshTask() error {
 	runnable := func() {
 		enabledEcoFlow, connectedEcoFlow := s.ecoFlowMqttService.Status()
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricEcoFlowMqttEnabled, float.BoolToFloat(enabledEcoFlow)); err != nil {
-			log.Error().Msgf("Could not refresh EcoFlow MQTT enabled status. Reason: %s", err.Error())
+			log.Error().Err(err).Msg("Could not refresh EcoFlow MQTT enabled status")
 		}
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricEcoFlowMqttConnected, float.BoolToFloat(connectedEcoFlow)); err != nil {
-			log.Error().Msgf("Could not refresh EcoFlow MQTT connected status. Reason: %s", err.Error())
+			log.Error().Err(err).Msg("Could not refresh EcoFlow MQTT connected status")
 		}
 
 		enabledMqttForward, connectedMqttForward := s.mqttForwardService.Status()
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricMqttForwardEnabled, float.BoolToFloat(enabledMqttForward)); err != nil {
-			log.Error().Msgf("Could not refresh MQTT forward enabled status. Reason: %s", err.Error())
+			log.Error().Err(err).Msg("Could not refresh MQTT forward enabled status")
 		}
 		if err := s.prometheusService.SetGaugeNoLabels(constant.MetricMqttForwardConnected, float.BoolToFloat(connectedMqttForward)); err != nil {
-			log.Error().Msgf("Could not refresh MQTT forward connected status. Reason: %s", err.Error())
+			log.Error().Err(err).Msg("Could not refresh MQTT forward connected status")
 		}
 	}
 

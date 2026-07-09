@@ -61,7 +61,7 @@ func (s *CollectorService) Init() error {
 
 	for _, c := range collectors {
 		if err = s.start(c); err != nil {
-			log.Error().Msgf("Could not initialize collector '%s': %v", c.ID.String(), err)
+			log.Error().Err(err).Msgf("Could not initialize collector '%s'", c.ID.String())
 			continue
 		}
 	}
@@ -144,7 +144,7 @@ func (s *CollectorService) Create(deviceSN string, kind constant.CollectorKind, 
 	log.Debug().Msgf("Created collector '%+v'", e)
 
 	if err = s.start(e); err != nil {
-		log.Error().Msgf("Could not start collector '%s': %v", e.ID.String(), err)
+		log.Error().Err(err).Msgf("Could not start collector '%s'", e.ID.String())
 	}
 
 	return e, nil
@@ -202,7 +202,7 @@ func (s *CollectorService) Update(id string, deviceSN string, kind constant.Coll
 	log.Debug().Msgf("Modified collector '%v'", id)
 
 	if err = s.start(newEntity); err != nil {
-		log.Error().Msgf("Could not start collector '%s': %v", newEntity.ID.String(), err)
+		log.Error().Err(err).Msgf("Could not start collector '%s'", newEntity.ID.String())
 	}
 
 	return newEntity, nil
@@ -275,7 +275,7 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 	var err error
 	var pb []byte
 	if pb, err = c.Payload.MarshalJSON(); err != nil {
-		log.Error().Msgf("Could not unmarshal collector payload '%s': %v", c.ID, err)
+		log.Error().Err(err).Msgf("Could not unmarshal collector payload '%s'", c.ID)
 		return
 	}
 
@@ -284,27 +284,27 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 
 	if promErr := s.prometheusService.RegisterCounter(constant.MetricCollectorInvocations, constant.MetricCollectorInvocationsHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricCollectorInvocations, promErr)
+			log.Warn().Err(promErr).Msgf("Unable to register prometheus metric for '%s'", constant.MetricCollectorInvocations)
 		}
 	}
 	if promErr := s.prometheusService.IncreaseCounter(constant.MetricCollectorInvocations, genericMetricLabelValues); promErr != nil {
-		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricCollectorInvocations, promErr)
+		log.Warn().Err(promErr).Msgf("Unable to set prometheus metric for '%s'", constant.MetricCollectorInvocations)
 	}
 
 	if promErr := s.prometheusService.RegisterGauge(constant.MetricCollectorInvocationLast, constant.MetricCollectorInvocationLastHelp, generalMetricLabels); promErr != nil {
 		if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-			log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", constant.MetricCollectorInvocationLast, promErr)
+			log.Warn().Err(promErr).Msgf("Unable to register prometheus metric for '%s'", constant.MetricCollectorInvocationLast)
 		}
 	}
 	if promErr := s.prometheusService.SetGauge(constant.MetricCollectorInvocationLast, genericMetricLabelValues, received); promErr != nil {
-		log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", constant.MetricCollectorInvocationLast, promErr)
+		log.Warn().Err(promErr).Msgf("Unable to set prometheus metric for '%s'", constant.MetricCollectorInvocationLast)
 	}
 
 	switch c.Kind {
 	case constant.CollectorKindDeviceHistoricalData.String():
 		var p dto.CollectorEcoFlowHttpDeviceHistoricalDataPayload
 		if p, err = jsoninternal.UnmarshalGenericJSON[dto.CollectorEcoFlowHttpDeviceHistoricalDataPayload](pb); err != nil {
-			log.Error().Msgf("Could not unmarshal collector payload '%s'", c.ID)
+			log.Error().Err(err).Msgf("Could not unmarshal collector payload '%s'", c.ID)
 			return
 		}
 
@@ -338,17 +338,17 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 
 		var data dto.EcoFlowHistoryData
 		if data, err = s.ecoFlowHttpService.GetHistory(ctx, c.DeviceSN, beginTime, endTime); err != nil {
-			log.Error().Msgf("Could not get device historical data for collector '%s'. Reason: %s", c.ID, err.Error())
+			log.Error().Err(err).Msgf("Could not get device historical data for collector '%s'", c.ID)
 			return
 		}
 
 		var dataBytes []byte
 		if dataBytes, err = json.Marshal(data); err != nil {
-			log.Error().Msgf("Could not parse device historical data for collector '%s'", c.ID)
+			log.Error().Err(err).Msgf("Could not parse device historical data for collector '%s'", c.ID)
 		} else {
 			forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(meta.Name), c.DeviceSN, strings.ToLower(c.Kind))
 			if err = s.mqttForwardService.Publish(forwardTopic, 0, true, dataBytes); err != nil {
-				log.Warn().Msgf("Unable to forward collector '%s' device historical data: %v", c.ID, err)
+				log.Warn().Err(err).Msgf("Unable to forward collector '%s' device historical data", c.ID)
 			}
 		}
 
@@ -367,35 +367,35 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 
 			if promErr := s.prometheusService.RegisterGauge(metricKey, metricHelp, metricLabelKeys); promErr != nil {
 				if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-					log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", metricLabelKeys, promErr)
+					log.Warn().Err(promErr).Msgf("Unable to register prometheus metric for '%s'", metricLabelKeys)
 					continue
 				}
 			}
 			if promErr := s.prometheusService.SetGauge(metricKey, metricLabelValues, metricValue); promErr != nil {
-				log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", metricLabelKeys, promErr)
+				log.Warn().Err(promErr).Msgf("Unable to set prometheus metric for '%s'", metricLabelKeys)
 				continue
 			}
 		}
 	case constant.CollectorKindDeviceParameters.String():
 		var p dto.CollectorEcoFlowHttpDeviceParameterPayload
 		if p, err = jsoninternal.UnmarshalGenericJSON[dto.CollectorEcoFlowHttpDeviceParameterPayload](pb); err != nil {
-			log.Error().Msgf("Could not unmarshal collector payload '%s'", c.ID)
+			log.Error().Err(err).Msgf("Could not unmarshal collector payload '%s'", c.ID)
 			return
 		}
 
 		var data map[string]interface{}
 		if data, err = s.ecoFlowHttpService.GetParameters(ctx, c.DeviceSN, p.Parameters); err != nil {
-			log.Error().Msgf("Could not get device parameters for collector '%s'. Reason: %s", c.ID, err.Error())
+			log.Error().Err(err).Msgf("Could not get device parameters for collector '%s'", c.ID)
 			return
 		}
 
 		var dataBytes []byte
 		if dataBytes, err = json.Marshal(data); err != nil {
-			log.Error().Msgf("Could not parse device parameters for collector '%s'", c.ID)
+			log.Error().Err(err).Msgf("Could not parse device parameters for collector '%s'", c.ID)
 		} else {
 			forwardTopic := fmt.Sprintf("/%s/%s/%s", strings.ToLower(meta.Name), c.DeviceSN, strings.ToLower(c.Kind))
 			if err = s.mqttForwardService.Publish(forwardTopic, 0, true, dataBytes); err != nil {
-				log.Warn().Msgf("Unable to forward collector '%s' device parameters: %v", c.ID, err)
+				log.Warn().Err(err).Msgf("Unable to forward collector '%s' device parameters", c.ID)
 			}
 		}
 
@@ -426,12 +426,12 @@ func (s *CollectorService) run(ctx context.Context, c *model.Collector) { //noli
 
 			if promErr := s.prometheusService.RegisterGauge(metricKey, metricHelp, metricLabelKeys); promErr != nil {
 				if !errors.Is(promErr, ErrPrometheusMetricAlreadyRegistered) {
-					log.Warn().Msgf("Unable to register prometheus metric for '%s': %v", valueMap.Key, promErr)
+					log.Warn().Err(promErr).Msgf("Unable to register prometheus metric for '%s'", valueMap.Key)
 					continue
 				}
 			}
 			if promErr := s.prometheusService.SetGauge(metricKey, metricLabelValues, metricValue); promErr != nil {
-				log.Warn().Msgf("Unable to set prometheus metric for '%s': %v", valueMap.Key, promErr)
+				log.Warn().Err(promErr).Msgf("Unable to set prometheus metric for '%s'", valueMap.Key)
 				continue
 			}
 		}

@@ -67,30 +67,30 @@ func (s *Server) Start(ctx context.Context) {
 	if cfg.Lock.RedisEnabled {
 		var e error
 		if lockService, e = service.NewLockRedisService(cfg.Lock); e != nil {
-			log.Fatal().Msgf("Failed to create lock service: %+v", e)
+			log.Fatal().Err(e).Msg("Failed to create lock service")
 		}
 	}
 
 	var taskService *service.TaskService
 	if taskService, err = service.NewTaskService(lockService, cfg.App, cfg.Lock); err != nil {
-		log.Fatal().Msgf("Task service creation failed: %v", err)
+		log.Fatal().Err(err).Msg("Task service creation failed")
 	}
 
 	ecoFlowHttpService := service.NewEcoFlowHttpService(cfg.EcoFlow.AccessKey, cfg.EcoFlow.SecretKey, cfg.EcoFlow.URL)
 
 	mqttForwardService := service.NewMqttForwardService(taskService, cfg.MqttForward)
 	if err = mqttForwardService.Init(); err != nil {
-		log.Fatal().Msgf("MQTT forward service initialization failed: %v", err)
+		log.Fatal().Err(err).Msg("MQTT forward service initialization failed")
 	}
 
 	separatePromServer := cfg.Prometheus.Enabled && cfg.Prometheus.Port != cfg.Server.Port
 	var prometheusService *service.PrometheusService
 	if cfg.Prometheus.Enabled && separatePromServer {
 		prometheusService = service.NewPrometheusService(promRouter, cfg.Prometheus)
-		log.Info().Msgf("Starting separate Prometheus server")
+		log.Info().Msg("Starting separate Prometheus server")
 	} else if cfg.Prometheus.Enabled && !separatePromServer {
 		prometheusService = service.NewPrometheusService(appRouter, cfg.Prometheus)
-		log.Info().Msgf("Starting embedded Prometheus server")
+		log.Info().Msg("Starting embedded Prometheus server")
 	}
 	if cfg.Prometheus.Enabled {
 		// always instrument tracking for the meta router
@@ -101,7 +101,7 @@ func (s *Server) Start(ctx context.Context) {
 
 	ecoFlowMqttService := service.NewEcoFlowMqttService(ecoFlowHttpService, mqttSubReadService, mqttForwardService, prometheusService, taskService, cfg.EcoFlow)
 	if err = ecoFlowMqttService.Init(); err != nil {
-		log.Fatal().Msgf("EcoFlow service initialization failed: %v", err)
+		log.Fatal().Err(err).Msg("EcoFlow service initialization failed")
 	}
 
 	ecoFlowMqttTask := service.NewEcoFlowMqttTask(ecoFlowMqttService, mqttForwardService, prometheusService, taskService, cfg.EcoFlow)
@@ -110,12 +110,12 @@ func (s *Server) Start(ctx context.Context) {
 
 	collectorService := service.NewCollectorService(ecoFlowHttpService, mqttForwardService, taskService, prometheusService, collectorRepo)
 	if err = collectorService.Init(); err != nil {
-		log.Fatal().Msgf("Collector service initialization failed: %v", err)
+		log.Fatal().Err(err).Msg("Collector service initialization failed")
 	}
 
 	prometheusTask := service.NewPrometheusTask(cfg.Prometheus, ecoFlowMqttService, mqttForwardService, prometheusService, taskService)
 	if err = prometheusTask.Init(); err != nil {
-		log.Fatal().Msgf("Task prometheus task initialization failed: %v", err)
+		log.Fatal().Err(err).Msg("Task prometheus task initialization failed")
 	}
 	taskService.Start()
 
@@ -142,7 +142,7 @@ func (s *Server) Start(ctx context.Context) {
 	} else if constant.ConfigAuthModeNone == cfg.Auth.AuthMethod {
 		authMethodHandler = func(c *gin.Context) {}
 	} else {
-		log.Fatal().Msgf("No valid auth mode found")
+		log.Fatal().Msg("No valid auth mode found")
 	}
 
 	apiAuthGroup := appRouter.Group(cfg.Server.BasePath+"api/v1", authMethodHandler)
@@ -191,7 +191,7 @@ func (s *Server) Start(ctx context.Context) {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Info().Msgf("Shutting down...")
+	log.Info().Msg("Shutting down...")
 
 	timeoutCtx, timeoutCancel := context.WithTimeout(ctx, cfg.Server.Timeout)
 	defer timeoutCancel()
@@ -208,7 +208,7 @@ func (s *Server) Start(ctx context.Context) {
 
 	select {
 	case <-shutdownDone:
-		log.Info().Msgf("Exited")
+		log.Info().Msg("Exited")
 	case <-timeoutCtx.Done():
 		log.Info().Msgf("Shutdown timeout of '%v' expired, exiting forcefully...", cfg.Server.Timeout)
 		os.Exit(1)
@@ -217,7 +217,7 @@ func (s *Server) Start(ctx context.Context) {
 
 func (s *Server) newServer(r *gin.Engine, address string, readHeaderTimeout time.Duration) *http.Server {
 	if r == nil || address == "" {
-		log.Fatal().Msgf("Failed to create server, engine or address is nil")
+		log.Fatal().Msg("Failed to create server, engine or address is nil")
 		return nil
 	}
 
@@ -240,7 +240,7 @@ func (s *Server) startServer(h *http.Server, cfg *config.Server) {
 		}
 
 		if e != nil && !errors.Is(e, http.ErrServerClosed) {
-			log.Fatal().Msgf("Server cannot be started: %v", e)
+			log.Fatal().Err(e).Msg("Server cannot be started")
 		}
 	}()
 }
@@ -251,7 +251,7 @@ func (s *Server) stopServer(ctx context.Context, h *http.Server) {
 	}
 
 	if err := h.Shutdown(ctx); err != nil {
-		log.Fatal().Msgf("Shutdown failed, exited directly: %v", err)
+		log.Fatal().Err(err).Msg("Shutdown failed, exited directly")
 	}
 
 	log.Info().Msgf("Shutdown for '%s' complete", h.Addr)

@@ -57,7 +57,7 @@ func (s *MqttForwardService) Init() error {
 	}
 	opts.OnConnectionLost = func(client mqtt.Client, err error) {
 		optionsReader := client.OptionsReader()
-		log.Warn().Msgf("Connection to broker '%s' lost: %v", optionsReader.Servers()[0].String(), err)
+		log.Warn().Err(err).Msgf("Connection to broker '%s' lost", optionsReader.Servers()[0].String())
 	}
 	opts.OnReconnecting = func(client mqtt.Client, options *mqtt.ClientOptions) {
 		optionsReader := client.OptionsReader()
@@ -73,7 +73,7 @@ func (s *MqttForwardService) Init() error {
 
 	runnable := func() {
 		if err := s.Connect(); err != nil {
-			log.Error().Msgf("Unable to connect to forward MQTT: %v", err)
+			log.Error().Err(err).Msg("Unable to connect to forward MQTT")
 		}
 	}
 
