@@ -96,14 +96,15 @@ type Cors struct {
 }
 
 type Database struct {
-	Type             constant.ConfigDatabaseType `env:"DB_TYPE,default=postgres"           validate:"required,oneof=postgres"`
-	MigrationEnabled bool                        `env:"DB_MIGRATION_ENABLED,default=true"`
-	PostgresHost     string                      `env:"DB_POSTGRES_HOST,default=localhost" validate:"required_if=Type postgres"`
-	PostgresPort     int                         `env:"DB_POSTGRES_PORT,default=5432"      validate:"required_if=Type postgres"`
-	PostgresName     string                      `env:"DB_POSTGRES_NAME"                   validate:"required_if=Type postgres"`
-	PostgresTimeZone string                      `env:"DB_POSTGRES_TZ,default=Etc/UTC"     validate:"required_if=Type postgres"`
-	PostgresUser     string                      `env:"DB_POSTGRES_USER"                   validate:"required_if=Type postgres"`
-	PostgresPassword string                      `env:"DB_POSTGRES_PASSWORD"               validate:"required_if=Type postgres"`
+	Type                  constant.ConfigDatabaseType `env:"DB_TYPE,default=postgres"                 validate:"required,oneof=postgres"`
+	MigrationEnabled      bool                        `env:"DB_MIGRATION_ENABLED,default=true"`
+	PostgresHost          string                      `env:"DB_POSTGRES_HOST,default=localhost"       validate:"required_if=Type postgres"`
+	PostgresPort          int                         `env:"DB_POSTGRES_PORT,default=5432"            validate:"required_if=Type postgres"`
+	PostgresName          string                      `env:"DB_POSTGRES_NAME"                         validate:"required_if=Type postgres"`
+	PostgresTimeZone      string                      `env:"DB_POSTGRES_TZ,default=Etc/UTC"           validate:"required_if=Type postgres"`
+	PostgresUser          string                      `env:"DB_POSTGRES_USER"                         validate:"required_if=Type postgres"`
+	PostgresPassword      string                      `env:"DB_POSTGRES_PASSWORD"                     validate:"required_if=Type postgres"`
+	PostgresSlowThreshold time.Duration               `env:"DB_POSTGRES_SLOW_THRESHOLD,default=500ms" validate:"gte=0"`
 }
 
 type Lock struct {
@@ -186,7 +187,7 @@ func LoadFromEnvironment(ctx context.Context) (*Configuration, *gorm.DB) {
 
 		gormLog := zerologgorm.NewLogger(
 			zerologgorm.WithDefaultLogLevel(zerolog.DebugLevel),
-			zerologgorm.WithSlowThreshold(500*time.Millisecond),
+			zerologgorm.WithSlowThreshold(c.Database.PostgresSlowThreshold),
 			zerologgorm.WithLogParams(),
 			zerologgorm.WithIgnoreNotFoundError(),
 		)
