@@ -17,7 +17,6 @@
         "config:recommended",
         "group:monorepos",
         "group:recommended",
-        "local>msm/renovate-presets//presets/github-actions-ignore.json",
         "local>msm/renovate-presets//presets/go-ignore-manager.json",
         "local>msm/renovate-presets//presets/go-major.json",
         "local>msm/renovate-presets//presets/go-minor-group-automerge.json",
