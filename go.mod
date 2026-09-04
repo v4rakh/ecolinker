@@ -1,6 +1,6 @@
 module git.myservermanager.com/varakh/ecolinker
 
-go 1.26
+go 1.26.0
 
 require (
 	git.myservermanager.com/varakh/go-ecoflow v1.1.2
