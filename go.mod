@@ -25,7 +25,7 @@ require (
 	github.com/urfave/cli/v3 v3.11.0
 	go.uber.org/automaxprocs v1.6.0
 	gorm.io/datatypes v1.2.7
-	gorm.io/driver/postgres v1.6.2
+	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
 
