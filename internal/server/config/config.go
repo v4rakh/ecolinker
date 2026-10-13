@@ -19,7 +19,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/sethvargo/go-envconfig"
+	"github.com/sethvargo/go-envconfig/v2"
 	zerologgorm "github.com/skynet2/zerolog-gorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
