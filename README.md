@@ -462,7 +462,7 @@ Add EcoLinker as **Nix flakes** input:
 ```nix
 # flake.nix
 {
-    inputs.ecolinker.url = "git+https://git.myservermanager.com/varakh/ecolinker?ref=refs/tags/latest";
+    inputs.ecolinker.url = "git+https://git.myservermanager.com/varakh/ecolinker?ref=refs/tags/v0.4.1";
 }
 ```
 
