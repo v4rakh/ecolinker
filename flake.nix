@@ -32,7 +32,7 @@
               pwd = ./.;
               src = ./.;
               doCheck = false;
-              vendorHash = "sha256-Z5qoRFnIzkhlCucceXYpJYMFtjqkDFKigGAwn9yehkc=";
+              vendorHash = "sha256-lu28fn/1k8MDrsHTlg9zme1fd/kB1awlykIYGoOZzF8=";
               ldflags = [
                 "-s"
                 "-w"
