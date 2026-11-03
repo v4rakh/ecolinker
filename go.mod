@@ -11,7 +11,7 @@ require (
 	github.com/gin-contrib/cors v1.7.9
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-co-op/gocron-redis-lock/v2 v2.2.1
-	github.com/go-co-op/gocron/v2 v2.22.0
+	github.com/go-co-op/gocron/v2 v2.23.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/go-redsync/redsync/v4 v4.18.1
 	github.com/go-resty/resty/v2 v2.17.2
